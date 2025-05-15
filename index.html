@@ -60,55 +60,63 @@
     <script>
       const form = document.getElementById("form");
       const input = document.getElementById("evidencia");
+      const appsScriptURL = "https://script.google.com/macros/s/AKfycbwysvw9MeaO8xrK1sZAqJ7GIdxhXrd1cl7jfrAPOgZml1r4ZLmwAKbD1dWrVBnuShgAyQ/exec";
+      const makeWebhook = "https://hook.us2.make.com/u5jltiupbuviqha6xjm40w7eoty3uufy"; // reemplázalo por el tuyo
 
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const files = input.files;
-        if (files.length > 6) {
-          alert("Solo puedes subir hasta 6 archivos.");
-          return;
+        try {
+          const files = input.files;
+          if (files.length > 6) {
+            alert("Máximo 6 archivos");
+            return;
+          }
+
+          const formData = new FormData();
+          formData.append("fileCount", files.length);
+          for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const base64 = await toBase64(file);
+            formData.append(`file${i + 1}`, base64);
+            formData.append(`fileName${i + 1}`, file.name);
+            formData.append(`mimeType${i + 1}`, file.type);
+          }
+
+          const res = await fetch(appsScriptURL, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!res.ok) throw new Error("No se pudo subir la evidencia");
+
+          const result = await res.json();
+          const links = result.links;
+
+          // Ahora mandamos a Make
+          const data = {
+            fecha: new Date().toISOString(),
+            tienda: document.getElementById("tienda").value,
+            tipoProblema: document.getElementById("tipo").value,
+            prioridad: document.getElementById("prioridad").value,
+            descripcion: document.getElementById("descripcion").value,
+            evidencia: links.join(", "),
+            supervisor: document.getElementById("supervisor").value,
+            tecnicoAsignado: document.getElementById("tecnico").value,
+          };
+
+          await fetch(makeWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+
+          alert("¡Reporte enviado con éxito!");
+          form.reset();
+        } catch (error) {
+          console.error("Error:", error);
+          alert("Error al enviar. Revisa consola (F12).");
         }
-
-        // Paso 1: Subir archivos a Google Drive
-        const formData = new FormData();
-        formData.append("fileCount", files.length);
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          const base64 = await toBase64(file);
-          formData.append(`file${i + 1}`, base64);
-          formData.append(`fileName${i + 1}`, file.name);
-          formData.append(`mimeType${i + 1}`, file.type);
-        }
-
-        const appsScriptURL = "https://script.google.com/macros/s/AKfycbwysvw9MeaO8xrK1sZAqJ7GIdxhXrd1cl7jfrAPOgZml1r4ZLmwAKbD1dWrVBnuShgAyQ/exec";
-        const res = await fetch(appsScriptURL, {
-          method: "POST",
-          body: formData,
-        });
-        const result = await res.json();
-        const links = result.links;
-
-        // Paso 2: Enviar todo a Make Webhook
-        const data = {
-          fecha: new Date().toISOString(),
-          tienda: document.getElementById("tienda").value,
-          tipoProblema: document.getElementById("tipo").value,
-          prioridad: document.getElementById("prioridad").value,
-          descripcion: document.getElementById("descripcion").value,
-          evidencia: links.join(", "),
-          supervisor: document.getElementById("supervisor").value,
-          tecnicoAsignado: document.getElementById("tecnico").value,
-        };
-
-        await fetch("https://hook.us2.make.com/u5jltiupbuviqha6xjm40w7eoty3uufy", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-
-        alert("¡Reporte enviado con éxito!");
-        form.reset();
       });
 
       function toBase64(file) {
