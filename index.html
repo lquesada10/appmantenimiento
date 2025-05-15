@@ -5,64 +5,64 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mini-App | Reportar Problema</title>
     <script>
-  async function enviarReporte(event) {
-    event.preventDefault();
+      async function enviarReporte(event) {
+        event.preventDefault();
 
-    const form = document.getElementById("form");
-    const input = document.getElementById("evidencia");
-    const files = input.files;
+        const form = document.getElementById("form");
+        const input = document.getElementById("evidencia");
+        const files = input.files;
+        if (files.length > 6) {
+          alert("Máximo 6 archivos.");
+          return;
+        }
 
-    if (files.length > 6) {
-      alert("Máximo 6 archivos.");
-      return;
-    }
+        const fileData = [];
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const base64 = await toBase64(file);
+          fileData.push({
+            content: base64.split(",")[1],
+            type: file.type,
+            name: file.name,
+          });
+        }
 
-    // Leer todos los archivos como base64
-    const fileData = await Promise.all(
-      Array.from(files).map(file => {
+        const data = {
+          fecha: new Date().toISOString(),
+          tienda: document.getElementById("tienda").value,
+          tipoProblema: document.getElementById("tipo").value,
+          prioridad: document.getElementById("prioridad").value,
+          descripcion: document.getElementById("descripcion").value,
+          supervisor: document.getElementById("supervisor").value,
+          tecnicoAsignado: document.getElementById("tecnico").value,
+          evidencia: fileData,
+        };
+
+        try {
+          await fetch("https://hook.us2.make.com/u5jltiupbuviqha6xjm40w7eoty3uufy", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          alert("Reporte enviado con éxito");
+          form.reset();
+        } catch (error) {
+          console.error(error);
+          alert("Error al enviar. Revisa consola (F12).");
+        }
+      }
+
+      function toBase64(file) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
-          reader.onload = () => {
-            const base64 = reader.result.split(",")[1];
-            resolve({
-              name: file.name,
-              type: file.type,
-              content: base64
-            });
-          };
-          reader.onerror = reject;
           reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
         });
-      })
-    );
-
-    const data = {
-      fecha: new Date().toISOString(),
-      tienda: document.getElementById("tienda").value,
-      tipoProblema: document.getElementById("tipo").value,
-      prioridad: document.getElementById("prioridad").value,
-      descripcion: document.getElementById("descripcion").value,
-      supervisor: document.getElementById("supervisor").value,
-      tecnicoAsignado: document.getElementById("tecnico").value,
-      evidencia: fileData
-    };
-
-    try {
-      await fetch("https://hook.us2.make.com/REEMPLAZA_AQUI", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
-      alert("Reporte enviado con éxito");
-      form.reset();
-    } catch (error) {
-      console.error(error);
-      alert("Error al enviar. Revisa consola (F12).");
-    }
-  }
-</script>
-
+      }
+    </script>
   </head>
+
   <body style="font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto;">
     <h2>✉️ Reportar un Problema</h2>
     <form id="form" onsubmit="enviarReporte(event)">
@@ -109,4 +109,5 @@
     </form>
   </body>
 </html>
+
 
