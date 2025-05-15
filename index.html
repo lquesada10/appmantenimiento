@@ -4,69 +4,41 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mini-App | Reportar Problema</title>
-    <style>
-      body {
-        font-family: sans-serif;
-        padding: 20px;
-        max-width: 600px;
-        margin: auto;
-      }
-    </style>
     <script>
       async function enviarReporte(event) {
         event.preventDefault();
 
-        const files = document.getElementById("evidencia").files;
-        if (files.length === 0 || files.length > 6) {
-          alert("Sube entre 1 y 6 archivos.");
-          return;
+        const form = document.getElementById("form");
+        const formData = new FormData(form);
+
+        formData.append("fecha", new Date().toISOString());
+        formData.append("tienda", document.getElementById("tienda").value);
+        formData.append("tipoProblema", document.getElementById("tipo").value);
+        formData.append("prioridad", document.getElementById("prioridad").value);
+        formData.append("descripcion", document.getElementById("descripcion").value);
+        formData.append("supervisor", document.getElementById("supervisor").value);
+        formData.append("tecnicoAsignado", document.getElementById("tecnico").value);
+
+        const archivos = document.getElementById("evidencia").files;
+        for (let i = 0; i < archivos.length && i < 6; i++) {
+          formData.append("evidencias[]", archivos[i]);
         }
 
-        const data = {
-          fecha: new Date().toISOString(),
-          tienda: document.getElementById("tienda").value,
-          tipoProblema: document.getElementById("tipo").value,
-          prioridad: document.getElementById("prioridad").value,
-          descripcion: document.getElementById("descripcion").value,
-          supervisor: document.getElementById("supervisor").value,
-          tecnicoAsignado: document.getElementById("tecnico").value,
-          fileCount: files.length
-        };
-
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          const reader = new FileReader();
-
-          await new Promise((resolve, reject) => {
-            reader.onload = () => {
-              const base64 = reader.result.split(",")[1];
-              data[`file${i}`] = base64;
-              data[`fileName${i}`] = file.name;
-              data[`mimeType${i}`] = file.type;
-              resolve();
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          });
-        }
-
-        const response = await fetch("https://script.google.com/macros/s/AKfycbwysvw9MeaO8xrK1sZAqJ7GIdxhXrd1cl7jfrAPOgZml1r4ZLmwAKbD1dWrVBnuShgAyQ/exec", {
+        await fetch("https://script.google.com/macros/s/AKfycbwysvw9MeaO8xrK1sZAqJ7GIdxhXrd1cl7jfrAPOgZml1r4ZLmwAKbD1dWrVBnuShgAyQ/exec", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
+          body: formData,
         });
 
-        const result = await response.json();
-        alert("Reporte enviado con éxito. Archivos subidos:\n" + result.links.join("\n"));
-        document.getElementById("form").reset();
+        alert("Reporte enviado con éxito");
+        form.reset();
       }
     </script>
   </head>
-  <body>
+  <body style="font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto;">
     <h2>✉️ Reportar un Problema</h2>
     <form id="form" onsubmit="enviarReporte(event)">
       <label><strong>Tienda:</strong></label><br />
-      <select id="tienda" required>
+      <select id="tienda" name="tienda" required>
         <option value="">Selecciona una tienda</option>
         <option value="Tienda 1">Tienda 1</option>
         <option value="Tienda 2">Tienda 2</option>
@@ -74,10 +46,10 @@
       </select><br /><br />
 
       <label><strong>Tipo de problema:</strong></label><br />
-      <input id="tipo" required /><br /><br />
+      <input id="tipo" name="tipoProblema" required /><br /><br />
 
       <label><strong>Prioridad:</strong></label><br />
-      <select id="prioridad" required>
+      <select id="prioridad" name="prioridad" required>
         <option value="">Selecciona prioridad</option>
         <option value="Alta">Alta</option>
         <option value="Media">Media</option>
@@ -85,20 +57,20 @@
       </select><br /><br />
 
       <label><strong>Descripción:</strong></label><br />
-      <textarea id="descripcion" required></textarea><br /><br />
+      <textarea id="descripcion" name="descripcion" required></textarea><br /><br />
 
       <label><strong>Subir evidencia (hasta 6 archivos):</strong></label><br />
-      <input id="evidencia" type="file" multiple required /><br /><br />
+      <input id="evidencia" name="evidencias" type="file" multiple required /><br /><br />
 
       <label><strong>Nombre del Supervisor:</strong></label><br />
-      <select id="supervisor" required>
+      <select id="supervisor" name="supervisor" required>
         <option value="">Selecciona supervisor</option>
         <option value="Pedro">Pedro</option>
         <option value="Liliana">Liliana</option>
       </select><br /><br />
 
       <label><strong>Técnico asignado:</strong></label><br />
-      <select id="tecnico" required>
+      <select id="tecnico" name="tecnicoAsignado" required>
         <option value="">Selecciona técnico</option>
         <option value="Juan">Juan</option>
         <option value="Luis">Luis</option>
@@ -108,5 +80,3 @@
     </form>
   </body>
 </html>
-
-
