@@ -17,20 +17,22 @@
         }
 
         // Convertir archivos a base64
-        const fileData = await Promise.all(
-          Array.from(files).map(file => new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              resolve({
-                content: reader.result.split(",")[1],
-                name: file.name,
-                type: file.type
-              });
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          }))
-        );
+        // Convertir archivos a base64
+const fileData = await Promise.all(
+  Array.from(files).map(file => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      resolve({
+        name: file.name,
+        type: file.type,
+        content: reader.result.split(",")[1]
+      });
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  }))
+);
+
 
         // Crear payload para Make
         const data = {
