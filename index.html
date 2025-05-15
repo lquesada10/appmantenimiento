@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mini-App | Reportar Problema</title>
+    <script>
+      async function enviarReporte(event) {
+        event.preventDefault();
+
+        const data = {
+          fecha: new Date().toISOString(),
+          tienda: document.getElementById("tienda").value,
+          tipoProblema: document.getElementById("tipo").value,
+          prioridad: document.getElementById("prioridad").value,
+          descripcion: document.getElementById("descripcion").value,
+          evidencia: document.getElementById("evidencia").files[0]?.name || "Sin archivo",
+          supervisor: document.getElementById("supervisor").value,
+          tecnicoAsignado: document.getElementById("tecnico").value,
+        };
+
+        await fetch("https://hook.make.com/XXXXXXXXXXXX", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+
+        alert("Reporte enviado con éxito");
+        document.getElementById("form").reset();
+      }
+    </script>
+  </head>
+  <body style="font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto;">
+    <h2>✉️ Reportar un Problema</h2>
+    <form id="form" onsubmit="enviarReporte(event)">
+      <label><strong>Tienda:</strong></label><br />
+      <select id="tienda" required>
+        <option value="">Selecciona una tienda</option>
+        <option value="Tienda 1">Tienda 1</option>
+        <option value="Tienda 2">Tienda 2</option>
+        <option value="Tienda 3">Tienda 3</option>
+      </select><br /><br />
+
+      <label><strong>Tipo de problema:</strong></label><br />
+      <input id="tipo" required /><br /><br />
+
+      <label><strong>Prioridad:</strong></label><br />
+      <select id="prioridad" required>
+        <option value="">Selecciona prioridad</option>
+        <option value="Alta">Alta</option>
+        <option value="Media">Media</option>
+        <option value="Baja">Baja</option>
+      </select><br /><br />
+
+      <label><strong>Descripción:</strong></label><br />
+      <textarea id="descripcion" required></textarea><br /><br />
+
+      <label><strong>Subir evidencia (solo nombre del archivo):</strong></label><br />
+      <input id="evidencia" type="file" /><br /><br />
+
+      <label><strong>Nombre del Supervisor:</strong></label><br />
+      <select id="supervisor" required>
+        <option value="">Selecciona supervisor</option>
+        <option value="Pedro">Pedro</option>
+        <option value="Liliana">Liliana</option>
+      </select><br /><br />
+
+      <label><strong>Técnico asignado:</strong></label><br />
+      <select id="tecnico" required>
+        <option value="">Selecciona técnico</option>
+        <option value="Juan">Juan</option>
+        <option value="Luis">Luis</option>
+      </select><br /><br />
+
+      <button type="submit">Enviar reporte</button>
+    </form>
+  </body>
+</html>
