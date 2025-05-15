@@ -2,43 +2,21 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mini-App | Reportar Problema</title>
-    <script>
-      async function enviarReporte(event) {
-        event.preventDefault();
-
-        const form = document.getElementById("form");
-        const formData = new FormData(form);
-
-        formData.append("fecha", new Date().toISOString());
-        formData.append("tienda", document.getElementById("tienda").value);
-        formData.append("tipoProblema", document.getElementById("tipo").value);
-        formData.append("prioridad", document.getElementById("prioridad").value);
-        formData.append("descripcion", document.getElementById("descripcion").value);
-        formData.append("supervisor", document.getElementById("supervisor").value);
-        formData.append("tecnicoAsignado", document.getElementById("tecnico").value);
-
-        const archivos = document.getElementById("evidencia").files;
-        for (let i = 0; i < archivos.length && i < 6; i++) {
-          formData.append("evidencias[]", archivos[i]);
-        }
-
-        await fetch("https://script.google.com/macros/s/AKfycbwysvw9MeaO8xrK1sZAqJ7GIdxhXrd1cl7jfrAPOgZml1r4ZLmwAKbD1dWrVBnuShgAyQ/exec", {
-          method: "POST",
-          body: formData,
-        });
-
-        alert("Reporte enviado con éxito");
-        form.reset();
+    <style>
+      body {
+        font-family: sans-serif;
+        max-width: 600px;
+        margin: auto;
+        padding: 20px;
       }
-    </script>
+    </style>
   </head>
-  <body style="font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto;">
+  <body>
     <h2>✉️ Reportar un Problema</h2>
-    <form id="form" onsubmit="enviarReporte(event)">
+    <form id="form">
       <label><strong>Tienda:</strong></label><br />
-      <select id="tienda" name="tienda" required>
+      <select id="tienda" required>
         <option value="">Selecciona una tienda</option>
         <option value="Tienda 1">Tienda 1</option>
         <option value="Tienda 2">Tienda 2</option>
@@ -46,10 +24,10 @@
       </select><br /><br />
 
       <label><strong>Tipo de problema:</strong></label><br />
-      <input id="tipo" name="tipoProblema" required /><br /><br />
+      <input id="tipo" required /><br /><br />
 
       <label><strong>Prioridad:</strong></label><br />
-      <select id="prioridad" name="prioridad" required>
+      <select id="prioridad" required>
         <option value="">Selecciona prioridad</option>
         <option value="Alta">Alta</option>
         <option value="Media">Media</option>
@@ -57,20 +35,20 @@
       </select><br /><br />
 
       <label><strong>Descripción:</strong></label><br />
-      <textarea id="descripcion" name="descripcion" required></textarea><br /><br />
+      <textarea id="descripcion" required></textarea><br /><br />
 
       <label><strong>Subir evidencia (hasta 6 archivos):</strong></label><br />
-      <input id="evidencia" name="evidencias" type="file" multiple required /><br /><br />
+      <input id="evidencia" type="file" multiple accept="image/*,application/pdf" /><br /><br />
 
       <label><strong>Nombre del Supervisor:</strong></label><br />
-      <select id="supervisor" name="supervisor" required>
+      <select id="supervisor" required>
         <option value="">Selecciona supervisor</option>
         <option value="Pedro">Pedro</option>
         <option value="Liliana">Liliana</option>
       </select><br /><br />
 
       <label><strong>Técnico asignado:</strong></label><br />
-      <select id="tecnico" name="tecnicoAsignado" required>
+      <select id="tecnico" required>
         <option value="">Selecciona técnico</option>
         <option value="Juan">Juan</option>
         <option value="Luis">Luis</option>
@@ -78,5 +56,69 @@
 
       <button type="submit">Enviar reporte</button>
     </form>
+
+    <script>
+      const form = document.getElementById("form");
+      const input = document.getElementById("evidencia");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const files = input.files;
+        if (files.length > 6) {
+          alert("Solo puedes subir hasta 6 archivos.");
+          return;
+        }
+
+        // Paso 1: Subir archivos a Google Drive
+        const formData = new FormData();
+        formData.append("fileCount", files.length);
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const base64 = await toBase64(file);
+          formData.append(`file${i + 1}`, base64);
+          formData.append(`fileName${i + 1}`, file.name);
+          formData.append(`mimeType${i + 1}`, file.type);
+        }
+
+        const appsScriptURL = "https://script.google.com/macros/s/AKfycbwysvw9MeaO8xrK1sZAqJ7GIdxhXrd1cl7jfrAPOgZml1r4ZLmwAKbD1dWrVBnuShgAyQ/exec";
+        const res = await fetch(appsScriptURL, {
+          method: "POST",
+          body: formData,
+        });
+        const result = await res.json();
+        const links = result.links;
+
+        // Paso 2: Enviar todo a Make Webhook
+        const data = {
+          fecha: new Date().toISOString(),
+          tienda: document.getElementById("tienda").value,
+          tipoProblema: document.getElementById("tipo").value,
+          prioridad: document.getElementById("prioridad").value,
+          descripcion: document.getElementById("descripcion").value,
+          evidencia: links.join(", "),
+          supervisor: document.getElementById("supervisor").value,
+          tecnicoAsignado: document.getElementById("tecnico").value,
+        };
+
+        await fetch("https://hook.us2.make.com/u5jltiupbuviqha6xjm40w7eoty3uufy", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+
+        alert("¡Reporte enviado con éxito!");
+        form.reset();
+      });
+
+      function toBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(",")[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+    </script>
   </body>
 </html>
