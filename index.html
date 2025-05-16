@@ -8,62 +8,43 @@
       async function enviarReporte(event) {
         event.preventDefault();
 
-        const form = document.getElementById("form");
+        // 1) Creamos el FormData
+        const form = new FormData();
+        form.append("fecha", new Date().toISOString());
+        form.append("tienda", document.getElementById("tienda").value);
+        form.append("tipoProblema", document.getElementById("tipo").value);
+        form.append("prioridad", document.getElementById("prioridad").value);
+        form.append("descripcion", document.getElementById("descripcion").value);
+        form.append("supervisor", document.getElementById("supervisor").value);
+        form.append("tecnicoAsignado", document.getElementById("tecnico").value);
+
+        // 2) Adjuntamos cada archivo directamente
         const input = document.getElementById("evidencia");
-        const files = input.files;
-        if (files.length > 6) {
+        if (input.files.length > 6) {
           alert("Máximo 6 archivos.");
           return;
         }
-
-        const fileData = [];
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          const base64 = await toBase64(file);
-          const content = base64.split(",")[1];
-          fileData.push({
-            content: content,
-            type: file.type,
-            name: file.name
-          });
+        for (let i = 0; i < input.files.length; i++) {
+          form.append("evidencia", input.files[i]);
         }
 
-        const data = {
-          fecha: new Date().toISOString(),
-          tienda: document.getElementById("tienda").value,
-          tipoProblema: document.getElementById("tipo").value,
-          prioridad: document.getElementById("prioridad").value,
-          descripcion: document.getElementById("descripcion").value,
-          supervisor: document.getElementById("supervisor").value,
-          tecnicoAsignado: document.getElementById("tecnico").value,
-          evidencia: fileData
-        };
-
+        // 3) Enviamos al webhook SIN headers explícitos
         try {
-          await fetch("https://hook.us2.make.com/u5jltiupbuviqha6xjm40w7eoty3uufy", {
+          const res = await fetch("https://hook.us2.make.com/tu_webhook_aquí", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data)
+            body: form
           });
+          if (!res.ok) throw new Error(res.statusText);
           alert("Reporte enviado con éxito");
-          form.reset();
-        } catch (error) {
-          console.error(error);
-          alert("Error al enviar. Revisa consola (F12).");
+          document.getElementById("form").reset();
+        } catch (err) {
+          console.error(err);
+          alert("Error al enviar. Mira la consola (F12).");
         }
-      }
-
-      function toBase64(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-        });
       }
     </script>
   </head>
-  <body style="font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto;">
+  <body style="font-family: sans-serif; padding:20px; max-width:500px; margin:auto;">
     <h2>✉️ Reportar un Problema</h2>
     <form id="form" onsubmit="enviarReporte(event)">
       <label><strong>Tienda:</strong></label><br />
@@ -89,9 +70,9 @@
       <textarea id="descripcion" required></textarea><br /><br />
 
       <label><strong>Subir evidencia (hasta 6 archivos):</strong></label><br />
-      <input id="evidencia" type="file" multiple accept="image/*,application/pdf" /><br /><br />
+      <input id="evidencia" type="file" multiple accept="image/*,application/pdf"/><br /><br />
 
-      <label><strong>Nombre del Supervisor:</strong></label><br />
+      <label><strong>Supervisor:</strong></label><br />
       <select id="supervisor" required>
         <option value="">Selecciona supervisor</option>
         <option value="Pedro">Pedro</option>
@@ -109,4 +90,5 @@
     </form>
   </body>
 </html>
+
 
