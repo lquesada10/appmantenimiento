@@ -21,7 +21,7 @@
           const file = files[i];
           const base64 = await toBase64(file);
           fileData.push({
-            content: base64.split(",")[1],
+            content: base64, // ✅ ENVÍA el string COMPLETO (incluye el encabezado data:image...)
             type: file.type,
             name: file.name,
           });
@@ -55,7 +55,7 @@
       function toBase64(file) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
-          reader.readAsDataURL(file);
+          reader.readAsDataURL(file); // ✅ Esto ya incluye "data:image/png;base64,..."
           reader.onload = () => resolve(reader.result);
           reader.onerror = reject;
         });
@@ -109,5 +109,6 @@
     </form>
   </body>
 </html>
+
 
 
