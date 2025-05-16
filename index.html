@@ -20,10 +20,11 @@
         for (let i = 0; i < files.length; i++) {
           const file = files[i];
           const base64 = await toBase64(file);
+          const content = base64.split(",")[1];
           fileData.push({
-            content: base64, // ✅ ENVÍA el string COMPLETO (incluye el encabezado data:image...)
+            content: content,
             type: file.type,
-            name: file.name,
+            name: file.name
           });
         }
 
@@ -35,14 +36,14 @@
           descripcion: document.getElementById("descripcion").value,
           supervisor: document.getElementById("supervisor").value,
           tecnicoAsignado: document.getElementById("tecnico").value,
-          evidencia: fileData,
+          evidencia: fileData
         };
 
         try {
           await fetch("https://hook.us2.make.com/u5jltiupbuviqha6xjm40w7eoty3uufy", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
+            body: JSON.stringify(data)
           });
           alert("Reporte enviado con éxito");
           form.reset();
@@ -55,14 +56,13 @@
       function toBase64(file) {
         return new Promise((resolve, reject) => {
           const reader = new FileReader();
-          reader.readAsDataURL(file); // ✅ Esto ya incluye "data:image/png;base64,..."
+          reader.readAsDataURL(file);
           reader.onload = () => resolve(reader.result);
           reader.onerror = reject;
         });
       }
     </script>
   </head>
-
   <body style="font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto;">
     <h2>✉️ Reportar un Problema</h2>
     <form id="form" onsubmit="enviarReporte(event)">
@@ -109,6 +109,3 @@
     </form>
   </body>
 </html>
-
-
-
