@@ -4,21 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mini-App | Reportar Problema</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
       async function enviarReporte(event) {
         event.preventDefault();
 
-        // 1) Creamos el FormData
-        const form = new FormData();
-        form.append("fecha", new Date().toISOString());
-        form.append("tienda", document.getElementById("tienda").value);
-        form.append("tipoProblema", document.getElementById("tipo").value);
-        form.append("prioridad", document.getElementById("prioridad").value);
-        form.append("descripcion", document.getElementById("descripcion").value);
-        form.append("supervisor", document.getElementById("supervisor").value);
-        form.append("tecnicoAsignado", document.getElementById("tecnico").value);
+        // 0) Preparamos el objeto con los datos del reporte
+        const data = {
+          fecha: new Date().toISOString(),
+          tienda: document.getElementById("tienda").value,
+          tipoProblema: document.getElementById("tipo").value,
+          prioridad: document.getElementById("prioridad").value,
+          descripcion: document.getElementById("descripcion").value,
+          supervisor: document.getElementById("supervisor").value,
+          tecnicoAsignado: document.getElementById("tecnico").value
+        };
 
-        // 2) Adjuntamos cada archivo directamente
+        // 1) Construimos el FormData y añadimos los campos de data
+        const form = new FormData();
+        for (const [key, value] of Object.entries(data)) {
+          form.append(key, value);
+        }
+
+        // 2) Adjuntamos cada archivo seleccionado
         const input = document.getElementById("evidencia");
         if (input.files.length > 6) {
           alert("Máximo 6 archivos.");
@@ -28,27 +36,32 @@
           form.append("evidencia", input.files[i]);
         }
 
-        // 3) Enviamos al webhook SIN headers explícitos
-       try {
-        const res = await fetch("https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz", {
-          method: "POST",
-          body: form
-        });
-        if (!res.ok) throw new Error(res.statusText);
-        alert("Reporte enviado con éxito");
-        document.getElementById("form").reset();
+        // 3) Enviamos al webhook de Make
+        try {
+          const res = await fetch("https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz", {
+            method: "POST",
+            body: form
+          });
+          if (!res.ok) throw new Error(res.statusText);
 
-        // 🚀 Envía también los mismos datos al bot de Telegram
-        if (window.Telegram && window.Telegram.WebApp) {
-          window.Telegram.WebApp.sendData(JSON.stringify(data));
+          alert("Reporte enviado con éxito");
+          document.getElementById("form").reset();
+
+          // 4) También enviamos los mismos datos al bot de Telegram
+          if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.sendData(JSON.stringify(data));
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Error al enviar. Mira la consola (F12).");
         }
-      } catch (err) {
-        console.error(err);
-        alert("Error al enviar. Mira la consola (F12).");
       }
+
+      // Inicializamos la WebApp de Telegram cuando cargue la página
+      window.Telegram?.WebApp?.ready();
     </script>
   </head>
-  <body style="font-family: sans-serif; padding:20px; max-width:500px; margin:auto;">
+  <body style="font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto;">
     <h2>✉️ Reportar un Problema</h2>
     <form id="form" onsubmit="enviarReporte(event)">
       <label><strong>Tienda:</strong></label><br />
@@ -74,7 +87,7 @@
       <textarea id="descripcion" required></textarea><br /><br />
 
       <label><strong>Subir evidencia (hasta 6 archivos):</strong></label><br />
-      <input id="evidencia" type="file" multiple accept="image/*,application/pdf"/><br /><br />
+      <input id="evidencia" type="file" multiple accept="image/*,application/pdf" /><br /><br />
 
       <label><strong>Supervisor:</strong></label><br />
       <select id="supervisor" required>
@@ -94,5 +107,6 @@
     </form>
   </body>
 </html>
+
 
 
