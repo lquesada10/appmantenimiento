@@ -33,8 +33,9 @@
           return;
         }
         for (let i = 0; i < input.files.length; i++) {
-          form.append("evidencia", input.files[i]);
-        }
+  const file = new File([input.files[i]], input.files[i].name, { type: input.files[i].type });
+  form.append("evidencia", file);
+}
 
         // 3) Enviamos al webhook de Make
         try {
