@@ -54,7 +54,6 @@
         color: var(--text-color);
         background-color: var(--container-bg);
       }
-      /* Ajuste específico para el campo de ID */
       #reportId {
         background-color: var(--container-bg) !important;
         color: var(--text-color) !important;
@@ -78,7 +77,6 @@
       }
     </style>
     <script>
-      // Inicializa la WebApp de Telegram y aplica tema
       window.Telegram?.WebApp?.onEvent('themeChanged', () => applyTheme());
       window.Telegram?.WebApp?.ready();
 
@@ -93,23 +91,43 @@
         document.documentElement.style.setProperty('--button-text', theme.button_text_color || '#ffffff');
       }
 
-      // Endpoint en Make para gestionar IDs secuenciales
-      const ID_ENDPOINT = 'https://hook.us2.make.com/next-id';
+      function generarIdUnico() {
+        if (window.crypto && crypto.randomUUID) {
+          return crypto.randomUUID();
+        }
+        return Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e6).toString(36);
+      }
+
+      function compressImage(file, maxWidth = 1200, quality = 0.7) {
+        return new Promise(resolve => {
+          const img = new Image();
+          img.onload = () => {
+            const scale = Math.min(1, maxWidth / img.width);
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width * scale;
+            canvas.height = img.height * scale;
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            canvas.toBlob(blob => {
+              resolve(new File([blob], file.name, { type: 'image/jpeg' }));
+            }, 'image/jpeg', quality);
+          };
+          const reader = new FileReader();
+          reader.onload = e => img.src = e.target.result;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      // Placeholder: integrarse con ffmpeg.wasm para comprimir video
+      async function compressVideo(file) {
+        // TODO: usar ffmpeg.wasm para transcodificar a menor resolución/bitrate
+        return file;
+      }
 
       async function enviarReporte(event) {
         event.preventDefault();
         const idField = document.getElementById('reportId');
-        let newId = '';
-        try {
-          const resp = await fetch(ID_ENDPOINT);
-          if (resp.ok) {
-            const json = await resp.json();
-            newId = json.id;
-          } else throw new Error();
-        } catch {
-          newId = '1';
-        }
-        idField.value = newId;  // Asigna el nuevo ID al campo
+        const newId = generarIdUnico();
+        idField.value = newId;
 
         const data = {
           id: newId,
@@ -123,14 +141,26 @@
         };
 
         const form = new FormData();
-        Object.entries(data).forEach(([k, v]) => form.append(k, v));
+        Object.entries(data).forEach(([k,v]) => form.append(k, v));
+
         const input = document.getElementById('evidencia');
-        if (input.files.length > 6) {
+        const files = Array.from(input.files);
+        if (files.length > 6) {
           alert('Máximo 6 archivos.');
           return;
         }
-        for (let i = 0; i < input.files.length; i++) {
-          form.append('evidencia', input.files[i]);
+
+        for (const file of files) {
+          if (file.type.startsWith('image/')) {
+            const img = await compressImage(file);
+            form.append('evidencia', img);
+          } else if (file.type.startsWith('video/')) {
+            // los videos se envían sin compresión o con FFmpeg más adelante
+            const vid = await compressVideo(file);
+            form.append('evidencia', vid);
+          } else {
+            form.append('evidencia', file);
+          }
         }
 
         try {
@@ -138,12 +168,17 @@
           if (!res.ok) throw new Error(res.statusText);
           alert('✅ Reporte enviado con éxito');
           document.getElementById('form').reset();
-          if (window.Telegram?.WebApp) window.Telegram.WebApp.sendData(JSON.stringify(data));
+          window.Telegram?.WebApp?.sendData(JSON.stringify(data));
         } catch (err) {
           console.error(err);
           alert('❌ Error al enviar. Revisa la consola.');
         }
       }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        applyTheme();
+        document.getElementById('reportId').value = generarIdUnico();
+      });
     </script>
   </head>
   <body>
@@ -175,8 +210,8 @@
         <label>Descripción</label>
         <textarea id="descripcion" name="descripcion" rows="3" placeholder="Detalles adicionales..." required></textarea>
 
-        <label>Subir evidencia (max 6 archivos)</label>
-        <input id="evidencia" name="evidencia" type="file" multiple accept="image/*,application/pdf" />
+        <label>Subir evidencia (max 6 archivos; imagen, video o PDF)</label>
+        <input id="evidencia" name="evidencia" type="file" multiple accept="image/*,video/*,application/pdf" />
 
         <label>Supervisor</label>
         <select id="supervisor" name="supervisor" required>
@@ -202,6 +237,7 @@
     </div>
   </body>
 </html>
+
 
 
 
