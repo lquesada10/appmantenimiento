@@ -3,19 +3,29 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🚨 Reporte de Incidencia</title>
+    <title>🚨 Reporte LM Mantenimiento</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+      :root {
+        --bg-color: #f0f2f5;
+        --container-bg: #ffffff;
+        --text-color: #333333;
+        --secondary-text: #555555;
+        --border-color: #cccccc;
+        --button-bg: #0088cc;
+        --button-text: #ffffff;
+      }
       body {
         margin: 0;
         padding: 0;
-        background-color: #f0f2f5;
+        background-color: var(--bg-color);
         font-family: Helvetica, Arial, sans-serif;
+        color: var(--text-color);
       }
       .container {
         max-width: 480px;
         margin: 20px auto;
-        background: #ffffff;
+        background: var(--container-bg);
         border-radius: 10px;
         box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
         padding: 20px;
@@ -24,13 +34,12 @@
         margin-top: 0;
         text-align: center;
         font-size: 1.5em;
-        color: #333333;
       }
       label {
         display: block;
         margin-bottom: 4px;
         font-weight: bold;
-        color: #555555;
+        color: var(--secondary-text);
       }
       input,
       select,
@@ -39,33 +48,45 @@
         width: 100%;
         padding: 10px;
         margin-bottom: 16px;
-        border: 1px solid #cccccc;
+        border: 1px solid var(--border-color);
         border-radius: 6px;
         font-size: 1em;
+        color: var(--text-color);
+        background-color: var(--container-bg);
+      }
+      input::placeholder,
+      textarea::placeholder {
+        color: var(--border-color);
       }
       input[readonly] {
-        background-color: #eeeeee;
         cursor: not-allowed;
+        background-color: #eeeeee;
       }
       button {
-        background-color: #0088cc;
-        color: #ffffff;
+        background-color: var(--button-bg);
+        color: var(--button-text);
         border: none;
         font-weight: bold;
       }
       button:hover {
-        background-color: #0077b3;
+        opacity: 0.9;
       }
     </style>
     <script>
       // Inicializa la WebApp de Telegram y aplica tema
       window.Telegram?.WebApp?.onEvent('themeChanged', () => applyTheme());
       window.Telegram?.WebApp?.ready();
+
       function applyTheme() {
         const theme = window.Telegram.WebApp.themeParams;
-        document.body.style.backgroundColor = theme.background_color || '#f0f2f5';
-        document.querySelector('.container').style.backgroundColor = theme.bg_color || '#ffffff';
-        document.querySelector('button').style.backgroundColor = theme.button_color || '#0088cc';
+        // actualiza variables CSS
+        document.documentElement.style.setProperty('--bg-color', theme.background_color || '#f0f2f5');
+        document.documentElement.style.setProperty('--container-bg', theme.bg_color || '#ffffff');
+        document.documentElement.style.setProperty('--text-color', theme.text_color || '#333333');
+        document.documentElement.style.setProperty('--secondary-text', theme.hint_color || '#555555');
+        document.documentElement.style.setProperty('--border-color', theme.hint_color || '#cccccc');
+        document.documentElement.style.setProperty('--button-bg', theme.button_color || '#0088cc');
+        document.documentElement.style.setProperty('--button-text', theme.button_text_color || '#ffffff');
       }
 
       // Genera un ID único utilizando crypto API
@@ -73,19 +94,17 @@
         if (window.crypto && crypto.randomUUID) {
           return crypto.randomUUID();
         }
-        // fallback: timestamp + random
         return Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e6).toString(36);
       }
 
       window.addEventListener('DOMContentLoaded', () => {
+        applyTheme();
         const idField = document.getElementById('reportId');
-        const nuevoId = generarIdUnico();
-        idField.value = nuevoId;
+        idField.value = generarIdUnico();
       });
 
       async function enviarReporte(event) {
         event.preventDefault();
-
         const data = {
           id: document.getElementById('reportId').value,
           fecha: new Date().toISOString(),
@@ -96,10 +115,8 @@
           supervisor: document.getElementById('supervisor').value,
           tecnicoAsignado: document.getElementById('tecnico').value
         };
-
         const form = new FormData();
-        Object.entries(data).forEach(([key, value]) => form.append(key, value));
-
+        Object.entries(data).forEach(([k, v]) => form.append(k, v));
         const input = document.getElementById('evidencia');
         if (input.files.length > 6) {
           alert('Máximo 6 archivos.');
@@ -108,17 +125,11 @@
         for (let i = 0; i < input.files.length; i++) {
           form.append('evidencia', input.files[i]);
         }
-
         try {
-          const res = await fetch('https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz', {
-            method: 'POST',
-            body: form
-          });
+          const res = await fetch('https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz', { method: 'POST', body: form });
           if (!res.ok) throw new Error(res.statusText);
-
           alert('✅ Reporte enviado con éxito');
           document.getElementById('form').reset();
-
           if (window.Telegram?.WebApp) {
             window.Telegram.WebApp.sendData(JSON.stringify(data));
           }
@@ -145,7 +156,7 @@
         </select>
 
         <label>Tipo de problema</label>
-        <input id="tipo" type="text" required />
+        <input id="tipo" type="text" placeholder="Describe el problema" required />
 
         <label>Prioridad</label>
         <select id="prioridad" required>
@@ -156,7 +167,7 @@
         </select>
 
         <label>Descripción</label>
-        <textarea id="descripcion" rows="3" required></textarea>
+        <textarea id="descripcion" rows="3" placeholder="Detalles adicionales..." required></textarea>
 
         <label>Subir evidencia (max 6 archivos)</label>
         <input id="evidencia" type="file" multiple accept="image/*,application/pdf" />
@@ -165,14 +176,19 @@
         <select id="supervisor" required>
           <option value="">Seleccione supervisor</option>
           <option value="Pedro">Pedro</option>
+          <option value="Sandra">Sandra</option>
+          <option value="Leticia">Leticia</option>
+          <option value="Alfredo">Alfredo</option>
+          <option value="Paco">Paco</option>
           <option value="Liliana">Liliana</option>
+          <option value="JuanaF">JuanaF</option>
         </select>
 
         <label>Técnico asignado</label>
         <select id="tecnico" required>
           <option value="">Seleccione técnico</option>
-          <option value="Jose">Jose</option>
-          <option value="Luis">Luis</option>
+          <option value="Baron">Baron</option>
+          <option value="Cecilio">Cecilio</option>
         </select>
 
         <button type="submit">Enviar Reporte</button>
@@ -180,6 +196,7 @@
     </div>
   </body>
 </html>
+
 
 
 
