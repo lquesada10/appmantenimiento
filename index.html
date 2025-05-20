@@ -1,113 +1,186 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mini-App | Reportar Problema</title>
+    <title>🚨 Reporte de Incidencia</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f0f2f5;
+        font-family: Helvetica, Arial, sans-serif;
+      }
+      .container {
+        max-width: 480px;
+        margin: 20px auto;
+        background: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+      }
+      h2 {
+        margin-top: 0;
+        text-align: center;
+        font-size: 1.5em;
+        color: #333333;
+      }
+      label {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: bold;
+        color: #555555;
+      }
+      input,
+      select,
+      textarea,
+      button {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 16px;
+        border: 1px solid #cccccc;
+        border-radius: 6px;
+        font-size: 1em;
+      }
+      input[readonly] {
+        background-color: #eeeeee;
+        cursor: not-allowed;
+      }
+      button {
+        background-color: #0088cc;
+        color: #ffffff;
+        border: none;
+        font-weight: bold;
+      }
+      button:hover {
+        background-color: #0077b3;
+      }
+    </style>
     <script>
+      // Inicializa la WebApp de Telegram y aplica tema
+      window.Telegram?.WebApp?.onEvent('themeChanged', () => applyTheme());
+      window.Telegram?.WebApp?.ready();
+      function applyTheme() {
+        const theme = window.Telegram.WebApp.themeParams;
+        document.body.style.backgroundColor = theme.background_color || '#f0f2f5';
+        document.querySelector('.container').style.backgroundColor = theme.bg_color || '#ffffff';
+        document.querySelector('button').style.backgroundColor = theme.button_color || '#0088cc';
+      }
+
+      // Genera un ID único utilizando crypto API
+      function generarIdUnico() {
+        if (window.crypto && crypto.randomUUID) {
+          return crypto.randomUUID();
+        }
+        // fallback: timestamp + random
+        return Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e6).toString(36);
+      }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        const idField = document.getElementById('reportId');
+        const nuevoId = generarIdUnico();
+        idField.value = nuevoId;
+      });
+
       async function enviarReporte(event) {
         event.preventDefault();
 
-        // 0) Preparamos el objeto con los datos del reporte
         const data = {
+          id: document.getElementById('reportId').value,
           fecha: new Date().toISOString(),
-          tienda: document.getElementById("tienda").value,
-          tipoProblema: document.getElementById("tipo").value,
-          prioridad: document.getElementById("prioridad").value,
-          descripcion: document.getElementById("descripcion").value,
-          supervisor: document.getElementById("supervisor").value,
-          tecnicoAsignado: document.getElementById("tecnico").value
+          tienda: document.getElementById('tienda').value,
+          tipoProblema: document.getElementById('tipo').value,
+          prioridad: document.getElementById('prioridad').value,
+          descripcion: document.getElementById('descripcion').value,
+          supervisor: document.getElementById('supervisor').value,
+          tecnicoAsignado: document.getElementById('tecnico').value
         };
 
-        // 1) Construimos el FormData y añadimos los campos de data
         const form = new FormData();
-        for (const [key, value] of Object.entries(data)) {
-          form.append(key, value);
-        }
+        Object.entries(data).forEach(([key, value]) => form.append(key, value));
 
-        // 2) Adjuntamos cada archivo seleccionado
-        const input = document.getElementById("evidencia");
+        const input = document.getElementById('evidencia');
         if (input.files.length > 6) {
-          alert("Máximo 6 archivos.");
+          alert('Máximo 6 archivos.');
           return;
         }
         for (let i = 0; i < input.files.length; i++) {
-  const file = new File([input.files[i]], input.files[i].name, { type: input.files[i].type });
-  form.append("evidencia", file);
-}
+          form.append('evidencia', input.files[i]);
+        }
 
-        // 3) Enviamos al webhook de Make
         try {
-          const res = await fetch("https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz", {
-            method: "POST",
+          const res = await fetch('https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz', {
+            method: 'POST',
             body: form
           });
           if (!res.ok) throw new Error(res.statusText);
 
-          alert("Reporte enviado con éxito");
-          document.getElementById("form").reset();
+          alert('✅ Reporte enviado con éxito');
+          document.getElementById('form').reset();
 
-          // 4) También enviamos los mismos datos al bot de Telegram
-          if (window.Telegram && window.Telegram.WebApp) {
+          if (window.Telegram?.WebApp) {
             window.Telegram.WebApp.sendData(JSON.stringify(data));
           }
         } catch (err) {
           console.error(err);
-          alert("Error al enviar. Mira la consola (F12).");
+          alert('❌ Error al enviar. Revisa la consola.');
         }
       }
-
-      // Inicializamos la WebApp de Telegram cuando cargue la página
-      window.Telegram?.WebApp?.ready();
     </script>
   </head>
-  <body style="font-family: sans-serif; padding: 20px; max-width: 500px; margin: auto;">
-    <h2>✉️ Reportar un Problema</h2>
-    <form id="form" onsubmit="enviarReporte(event)">
-      <label><strong>Tienda:</strong></label><br />
-      <select id="tienda" required>
-        <option value="">Selecciona una tienda</option>
-        <option value="Tienda 1">Tienda 1</option>
-        <option value="Tienda 2">Tienda 2</option>
-        <option value="Tienda 3">Tienda 3</option>
-      </select><br /><br />
+  <body>
+    <div class="container">
+      <h2>🚨 Reporte de Incidencia</h2>
+      <form id="form" onsubmit="enviarReporte(event)">
+        <label>ID del Reporte</label>
+        <input id="reportId" type="text" readonly />
 
-      <label><strong>Tipo de problema:</strong></label><br />
-      <input id="tipo" required /><br /><br />
+        <label>Tienda</label>
+        <select id="tienda" required>
+          <option value="">Seleccione una tienda</option>
+          <option value="Tienda 1">Tienda 1</option>
+          <option value="Tienda 2">Tienda 2</option>
+          <option value="Tienda 3">Tienda 3</option>
+        </select>
 
-      <label><strong>Prioridad:</strong></label><br />
-      <select id="prioridad" required>
-        <option value="">Selecciona prioridad</option>
-        <option value="Alta">Alta</option>
-        <option value="Media">Media</option>
-        <option value="Baja">Baja</option>
-      </select><br /><br />
+        <label>Tipo de problema</label>
+        <input id="tipo" type="text" required />
 
-      <label><strong>Descripción:</strong></label><br />
-      <textarea id="descripcion" required></textarea><br /><br />
+        <label>Prioridad</label>
+        <select id="prioridad" required>
+          <option value="">Seleccione prioridad</option>
+          <option value="Alta">Alta</option>
+          <option value="Media">Media</option>
+          <option value="Baja">Baja</option>
+        </select>
 
-      <label><strong>Subir evidencia (hasta 6 archivos):</strong></label><br />
-      <input id="evidencia" type="file" multiple accept="image/*,application/pdf" /><br /><br />
+        <label>Descripción</label>
+        <textarea id="descripcion" rows="3" required></textarea>
 
-      <label><strong>Supervisor:</strong></label><br />
-      <select id="supervisor" required>
-        <option value="">Selecciona supervisor</option>
-        <option value="Pedro">Pedro</option>
-        <option value="Liliana">Liliana</option>
-      </select><br /><br />
+        <label>Subir evidencia (max 6 archivos)</label>
+        <input id="evidencia" type="file" multiple accept="image/*,application/pdf" />
 
-      <label><strong>Técnico asignado:</strong></label><br />
-      <select id="tecnico" required>
-        <option value="">Selecciona técnico</option>
-        <option value="Jose">Jose</option>
-        <option value="Luis">Luis</option>
-      </select><br /><br />
+        <label>Supervisor</label>
+        <select id="supervisor" required>
+          <option value="">Seleccione supervisor</option>
+          <option value="Pedro">Pedro</option>
+          <option value="Liliana">Liliana</option>
+        </select>
 
-      <button type="submit">Enviar reporte</button>
-    </form>
+        <label>Técnico asignado</label>
+        <select id="tecnico" required>
+          <option value="">Seleccione técnico</option>
+          <option value="Jose">Jose</option>
+          <option value="Luis">Luis</option>
+        </select>
+
+        <button type="submit">Enviar Reporte</button>
+      </form>
+    </div>
   </body>
 </html>
+
 
 
 
