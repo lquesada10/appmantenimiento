@@ -54,13 +54,18 @@
         color: var(--text-color);
         background-color: var(--container-bg);
       }
+      /* Ajuste específico para el campo de ID */
+      #reportId {
+        background-color: var(--container-bg) !important;
+        color: var(--text-color) !important;
+      }
       input::placeholder,
       textarea::placeholder {
         color: var(--border-color);
       }
       input[readonly] {
         cursor: not-allowed;
-        background-color: #eeeeee;
+        background-color: var(--container-bg) !important;
       }
       button {
         background-color: var(--button-bg);
@@ -79,7 +84,6 @@
 
       function applyTheme() {
         const theme = window.Telegram.WebApp.themeParams;
-        // actualiza variables CSS
         document.documentElement.style.setProperty('--bg-color', theme.background_color || '#f0f2f5');
         document.documentElement.style.setProperty('--container-bg', theme.bg_color || '#ffffff');
         document.documentElement.style.setProperty('--text-color', theme.text_color || '#333333');
@@ -89,24 +93,26 @@
         document.documentElement.style.setProperty('--button-text', theme.button_text_color || '#ffffff');
       }
 
-      // Genera un ID único utilizando crypto API
-      function generarIdUnico() {
-        if (window.crypto && crypto.randomUUID) {
-          return crypto.randomUUID();
-        }
-        return Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e6).toString(36);
-      }
-
-      window.addEventListener('DOMContentLoaded', () => {
-        applyTheme();
-        const idField = document.getElementById('reportId');
-        idField.value = generarIdUnico();
-      });
+      // Endpoint en Make para gestionar IDs secuenciales
+      const ID_ENDPOINT = 'https://hook.us2.make.com/next-id';
 
       async function enviarReporte(event) {
         event.preventDefault();
+        const idField = document.getElementById('reportId');
+        let newId = '';
+        try {
+          const resp = await fetch(ID_ENDPOINT);
+          if (resp.ok) {
+            const json = await resp.json();
+            newId = json.id;
+          } else throw new Error();
+        } catch {
+          newId = '1';
+        }
+        idField.value = newId;  // Asigna el nuevo ID al campo
+
         const data = {
-          id: document.getElementById('reportId').value,
+          id: newId,
           fecha: new Date().toISOString(),
           tienda: document.getElementById('tienda').value,
           tipoProblema: document.getElementById('tipo').value,
@@ -115,6 +121,7 @@
           supervisor: document.getElementById('supervisor').value,
           tecnicoAsignado: document.getElementById('tecnico').value
         };
+
         const form = new FormData();
         Object.entries(data).forEach(([k, v]) => form.append(k, v));
         const input = document.getElementById('evidencia');
@@ -125,14 +132,13 @@
         for (let i = 0; i < input.files.length; i++) {
           form.append('evidencia', input.files[i]);
         }
+
         try {
           const res = await fetch('https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz', { method: 'POST', body: form });
           if (!res.ok) throw new Error(res.statusText);
           alert('✅ Reporte enviado con éxito');
           document.getElementById('form').reset();
-          if (window.Telegram?.WebApp) {
-            window.Telegram.WebApp.sendData(JSON.stringify(data));
-          }
+          if (window.Telegram?.WebApp) window.Telegram.WebApp.sendData(JSON.stringify(data));
         } catch (err) {
           console.error(err);
           alert('❌ Error al enviar. Revisa la consola.');
@@ -142,13 +148,13 @@
   </head>
   <body>
     <div class="container">
-      <h2>🚨 Reporte LM Mantenimiento</h2>
+      <h2>🚨 Reporte de Incidencia</h2>
       <form id="form" onsubmit="enviarReporte(event)">
         <label>ID del Reporte</label>
-        <input id="reportId" type="text" readonly />
+        <input id="reportId" name="reportId" type="text" readonly placeholder="—" />
 
         <label>Tienda</label>
-        <select id="tienda" required>
+        <select id="tienda" name="tienda" required>
           <option value="">Seleccione una tienda</option>
           <option value="Tienda 1">Tienda 1</option>
           <option value="Tienda 2">Tienda 2</option>
@@ -156,10 +162,10 @@
         </select>
 
         <label>Tipo de problema</label>
-        <input id="tipo" type="text" placeholder="Describe el problema" required />
+        <input id="tipo" name="tipoProblema" type="text" placeholder="Describe el problema" required />
 
         <label>Prioridad</label>
-        <select id="prioridad" required>
+        <select id="prioridad" name="prioridad" required>
           <option value="">Seleccione prioridad</option>
           <option value="Alta">Alta</option>
           <option value="Media">Media</option>
@@ -167,13 +173,13 @@
         </select>
 
         <label>Descripción</label>
-        <textarea id="descripcion" rows="3" placeholder="Detalles adicionales..." required></textarea>
+        <textarea id="descripcion" name="descripcion" rows="3" placeholder="Detalles adicionales..." required></textarea>
 
         <label>Subir evidencia (max 6 archivos)</label>
-        <input id="evidencia" type="file" multiple accept="image/*,application/pdf" />
+        <input id="evidencia" name="evidencia" type="file" multiple accept="image/*,application/pdf" />
 
         <label>Supervisor</label>
-        <select id="supervisor" required>
+        <select id="supervisor" name="supervisor" required>
           <option value="">Seleccione supervisor</option>
           <option value="Pedro">Pedro</option>
           <option value="Sandra">Sandra</option>
@@ -185,7 +191,7 @@
         </select>
 
         <label>Técnico asignado</label>
-        <select id="tecnico" required>
+        <select id="tecnico" name="tecnicoAsignado" required>
           <option value="">Seleccione técnico</option>
           <option value="Baron">Baron</option>
           <option value="Cecilio">Cecilio</option>
@@ -196,6 +202,7 @@
     </div>
   </body>
 </html>
+
 
 
 
