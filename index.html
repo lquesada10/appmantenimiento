@@ -169,89 +169,89 @@
   </div>
 
   <script>
-    const tg = window.Telegram?.WebApp;
-    tg?.onEvent('themeChanged', applyTheme);
-    tg?.ready();
+  const tg = window.Telegram?.WebApp;
+  tg?.onEvent('themeChanged', applyTheme);
+  tg?.ready();
 
-    function applyTheme() {
-      const th = tg.themeParams;
-      document.body.style.backgroundColor = th.background_color || 'var(--bg)';
-      document.querySelector('.container').style.backgroundColor = th.bg_color || 'var(--card-bg)';
-    }
+  function applyTheme() {
+    const th = tg.themeParams;
+    document.body.style.backgroundColor = th.background_color || 'var(--bg)';
+    document.querySelector('.container').style.backgroundColor = th.bg_color || 'var(--card-bg)';
+  }
 
-    function generarIdUnico() {
-      return window.crypto?.randomUUID?.() ||
-             (Date.now().toString(36) + '-' + Math.floor(Math.random()*1e6).toString(36));
-    }
+  function generarIdUnico() {
+    return window.crypto?.randomUUID?.() ||
+           (Date.now().toString(36) + '-' + Math.floor(Math.random()*1e6).toString(36));
+  }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      applyTheme();
-      document.getElementById('reportId').value = generarIdUnico();
-    });
-
-    // placeholder: compresión de imágenes/vídeos (idéntica a tu flujo previo)
-    async function compressImage(file, maxWidth=1200, quality=0.7) {
-      /* ... tu implementación ... */
-      return file;
-    }
-    async function compressVideo(file) {
-      /* ... tu implementación ... */
-      return file;
-    }
-
-    async function enviarReporte(e) {
-      e.preventDefault();
-      const form = document.getElementById('form');
-      const fd = new FormData();
-
-      // 1) Campos de texto/select/textarea
-['reportId','tienda','tipoProblema','prioridad','descripcion','supervisor','tecnicoAsignado']
-  .forEach(name => {
-    const el = form.elements[name];
-    if (el) fd.append(name, el.value);
+  document.addEventListener('DOMContentLoaded', () => {
+    applyTheme();
+    document.getElementById('reportId').value = generarIdUnico();
   });
 
-// 1.1) Captura automática del chat_id desde Telegram
-const chatId = tg?.initDataUnsafe?.user?.id;
-if (chatId) {
-  fd.append('chat_id', chatId);
-} else {
-  alert('❌ No se pudo obtener tu chat ID desde Telegram. Abre esta mini app desde Telegram directamente.');
-  return;
-}
+  // placeholder: compresión de imágenes/vídeos (idéntica a tu flujo previo)
+  async function compressImage(file, maxWidth=1200, quality=0.7) {
+    /* ... tu implementación ... */
+    return file;
+  }
+  async function compressVideo(file) {
+    /* ... tu implementación ... */
+    return file;
+  }
 
+  async function enviarReporte(e) {
+    e.preventDefault();
+    const form = document.getElementById('form');
+    const fd = new FormData();
 
-      // 2) Fecha
-      fd.append('fecha', new Date().toISOString());
+    // 1) Campos sin supervisor
+    ['reportId','tienda','tipoProblema','prioridad','descripcion','tecnicoAsignado']
+      .forEach(name => {
+        const el = form.elements[name];
+        if (el) fd.append(name, el.value);
+      });
 
-      // 3) Archivos
-      const files = Array.from(form.elements['evidencia'].files);
-      if (files.length > 6) {
-        alert('Máximo 6 archivos.');
-        return;
-      }
-      for (const f of files) {
-        const blob = f.type.startsWith('image/') 
-                   ? await compressImage(f) 
-                   : await compressVideo(f);
-        fd.append('evidencia', blob, f.name);
-      }
-
-      // 4) Envío al webhook
-      try {
-        const res = await fetch('https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz', {
-          method: 'POST',
-          body: fd
-        });
-        if (!res.ok) throw await res.text();
-        alert('✅ Reporte enviado con éxito');
-        form.reset();
-      } catch(err) {
-        console.error(err);
-        alert('❌ Error al enviar: ' + err);
-      }
+    // 1.1) Captura automática del chat_id desde Telegram
+    const chatId = tg?.initDataUnsafe?.user?.id;
+    if (chatId) {
+      fd.append('chat_id', chatId);
+    } else {
+      alert('❌ No se pudo obtener tu chat ID desde Telegram. Abre esta mini app desde Telegram directamente.');
+      return;
     }
-  </script>
+
+    // 2) Fecha
+    fd.append('fecha', new Date().toISOString());
+
+    // 3) Archivos
+    const files = Array.from(form.elements['evidencia'].files);
+    if (files.length > 6) {
+      alert('Máximo 6 archivos.');
+      return;
+    }
+    for (const f of files) {
+      const blob = f.type.startsWith('image/') 
+                 ? await compressImage(f) 
+                 : await compressVideo(f);
+      fd.append('evidencia', blob, f.name);
+    }
+
+    // 4) Envío al webhook
+    try {
+      const res = await fetch('https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz', {
+        method: 'POST',
+        body: fd
+      });
+      if (!res.ok) throw await res.text();
+      alert('✅ Reporte enviado con éxito');
+      form.reset();
+    } catch(err) {
+      console.error(err);
+      alert('❌ Error al enviar: ' + err);
+    }
+  }
+</script>
+
 </body>
 </html>
 
