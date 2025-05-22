@@ -11,7 +11,7 @@
       --bg: #faf8f2;
       --card-bg: #fff8e1;
       --text: #333333;
-      --label-color: #6F4E37; /* preguntas en café */
+      --label-color: #6F4E37;
       --accent: #0088cc;
       --accent-hover: #007bb5;
       --border: #e0e0e0;
@@ -42,9 +42,14 @@
       animation: fadeIn 0.4s ease;
     }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
-    .logo { display: block; margin: 0 auto 1rem; width: 300px; height: auto; }
+    .logo {
+      display: block;
+      margin: 0 auto var(--spacing);
+      width: 300px;
+      height: auto;
+    }
     h2 {
-      margin: 0 0 1rem;
+      margin: 0 0 var(--spacing);
       font-family: var(--font-heading);
       font-weight: 700;
       text-align: center;
@@ -90,7 +95,7 @@
 </head>
 <body>
   <div class="container">
-    <img src="logo LM mantenimiento.png" alt="logo LM mantenimientocafe" class="logo" />
+    <img src="logo LM mantenimientocafe.png" alt="Logo La Milagresa" class="logo" />
     <h2>🚨 Reporte de Mantenimiento</h2>
     <form id="form" onsubmit="enviarReporte(event)">
       <div class="form-group">
@@ -108,7 +113,7 @@
       </div>
       <div class="form-group">
         <label>Tipo de problema</label>
-        <input id="tipo" name="tipoProblema" type="text" placeholder="Describe el problema" required />
+        <input id="tipoProblema" name="tipoProblema" type="text" placeholder="Describe el problema" required />
       </div>
       <div class="form-group">
         <label>Prioridad</label>
@@ -131,13 +136,12 @@
         <label>Supervisor</label>
         <select id="supervisor" name="supervisor" required>
           <option value="">Seleccione supervisor</option>
-          <option>Pedro</option><option>Sandra</option><option>Leticia</option><option>Alfredo</option>
-          <option>Paco</option><option>Liliana</option><option>JuanaF</option>
+          <option>Pedro</option><option>Sandra</option><option>Leticia</option><option>Alfredo</option><option>Paco</option><option>Liliana</option><option>JuanaF</option>
         </select>
       </div>
       <div class="form-group">
         <label>Técnico asignado</label>
-        <select id="tecnico" name="tecnicoAsignado" required>
+        <select id="tecnicoAsignado" name="tecnicoAsignado" required>
           <option value="">Seleccione técnico</option>
           <option>Baron</option><option>Cecilio</option>
         </select>
@@ -157,7 +161,6 @@
       document.documentElement.style.setProperty('--label-color', th.hint_color || '#6F4E37');
       document.documentElement.style.setProperty('--border', th.hint_color || '#e0e0e0');
       document.documentElement.style.setProperty('--accent', th.button_color || '#0088cc');
-      document.documentElement.style.setProperty('--button-text', th.button_text_color || '#ffffff');
     }
     function generarIdUnico() {
       return window.crypto?.randomUUID?.() || (Date.now().toString(36) + '-' + Math.floor(Math.random()*1e6).toString(36));
@@ -174,7 +177,7 @@
       ['reportId','tienda','tipoProblema','prioridad','descripcion','supervisor','tecnicoAsignado'].forEach(k=>fd.append(k,document.getElementById(k).value));
       fd.append('fecha',new Date().toISOString());
       const files=Array.from(document.getElementById('evidencia').files);
-      if(files.length>6){alert('Máximo 6 archivos.');return;}
+      if(files.length>6){alert('Máximo 6 archivos.');return;}      
       for(const f of files){fd.append('evidencia',f.type.startsWith('image/')?await compressImage(f):await compressVideo(f));}
       try{const r=await fetch('https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz',{method:'POST',body:fd});if(!r.ok)throw r.statusText;alert('✅ Reporte enviado con éxito');document.getElementById('form').reset();}catch(err){console.error(err);alert('❌ Error al enviar');}
     }
