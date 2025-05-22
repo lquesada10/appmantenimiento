@@ -95,7 +95,7 @@
 </head>
 <body>
   <div class="container">
-    <img src="logo LM mantenimientocafe.png" alt="Logo La Milagresa" class="logo" />
+    <img src="logo LM mantenimiento.png" alt="Logo LM Mantenimiento" class="logo" />
     <h2>🚨 Reporte de Mantenimiento</h2>
     <form id="form" onsubmit="enviarReporte(event)">
       <div class="form-group">
@@ -129,7 +129,7 @@
         <textarea id="descripcion" name="descripcion" rows="3" placeholder="Detalles adicionales..." required></textarea>
       </div>
       <div class="form-group">
-        <label>Subir evidencia máx 6 archivos</label>
+        <label>Subir evidencia (máx 6 archivos)</label>
         <input id="evidencia" name="evidencia" type="file" multiple accept="image/*,video/*,application/pdf" />
       </div>
       <div class="form-group">
@@ -177,7 +177,7 @@
       ['reportId','tienda','tipoProblema','prioridad','descripcion','supervisor','tecnicoAsignado'].forEach(k=>fd.append(k,document.getElementById(k).value));
       fd.append('fecha',new Date().toISOString());
       const files=Array.from(document.getElementById('evidencia').files);
-      if(files.length>6){alert('Máximo 6 archivos.');return;}      
+      if(files.length>6){alert('Máximo 6 archivos.');return;}
       for(const f of files){fd.append('evidencia',f.type.startsWith('image/')?await compressImage(f):await compressVideo(f));}
       try{const r=await fetch('https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz',{method:'POST',body:fd});if(!r.ok)throw r.statusText;alert('✅ Reporte enviado con éxito');document.getElementById('form').reset();}catch(err){console.error(err);alert('❌ Error al enviar');}
     }
