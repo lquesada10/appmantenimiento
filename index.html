@@ -13,8 +13,8 @@
       --text: #333333;
       --label: #6F4E37;           /* café */
       --border: #e0e0e0;
-      --accent: #0088cc;
-      --accent-hover: #007bb5;
+      --accent: #6F4E37;          /* café (botón) */
+      --accent-hover: #563C2D;    /* café oscuro al hover */
       --radius: 8px;
       --spacing: 1rem;
       --font-body: 'Inter', sans-serif;
@@ -22,9 +22,8 @@
     }
     * { box-sizing: border-box; }
     html, body {
-      margin: 0;
-      padding: 0;
-      background: var(--bg) !important;    /* forzar en Telegram */
+      margin: 0; padding: 0;
+      background: var(--bg) !important;
       width: 100%; height: 100%;
       font-family: var(--font-body);
     }
@@ -58,7 +57,10 @@
       margin-bottom: 0.25rem;
       font-weight: 500;
     }
-    input[type="text"], select, textarea, input[type="file"] {
+    input[type="text"],
+    select,
+    textarea,
+    input[type="file"] {
       width: 100%;
       padding: 0.75rem;
       border: 1px solid var(--border);
@@ -91,21 +93,21 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
-    <!-- Logo: asegúrate de llamar logo.png -->
-    <img src="logo LM mantenimientocafe.png" alt="Logo La Milagresa" class="logo" />
+    <img src="logo LM mantenimientocafe.png" alt="Logo LM Mantenimiento" class="logo" />
 
     <h2>🚨 Reporte de Mantenimiento</h2>
 
     <form id="form" onsubmit="enviarReporte(event)">
       <div class="form-group">
-        <label>ID del Reporte</label>
+        <label for="reportId">ID del Reporte</label>
         <input id="reportId" name="reportId" type="text" readonly placeholder="—" />
       </div>
 
       <div class="form-group">
-        <label>Tienda</label>
+        <label for="tienda">Tienda</label>
         <select id="tienda" name="tienda" required>
           <option value="">Seleccione una tienda</option>
           <option>Tienda 1</option>
@@ -115,12 +117,12 @@
       </div>
 
       <div class="form-group">
-        <label>Tipo de problema</label>
+        <label for="tipo">Tipo de problema</label>
         <input id="tipo" name="tipoProblema" type="text" placeholder="Describe el problema" required />
       </div>
 
       <div class="form-group">
-        <label>Prioridad</label>
+        <label for="prioridad">Prioridad</label>
         <select id="prioridad" name="prioridad" required>
           <option value="">Seleccione prioridad</option>
           <option>Alta</option>
@@ -130,29 +132,35 @@
       </div>
 
       <div class="form-group">
-        <label>Descripción</label>
+        <label for="descripcion">Descripción</label>
         <textarea id="descripcion" name="descripcion" rows="3" placeholder="Detalles adicionales..." required></textarea>
       </div>
 
       <div class="form-group">
-        <label>Subir evidencia máx 6 archivos</label>
+        <label for="evidencia">Subir evidencia máx 6 archivos</label>
         <input id="evidencia" name="evidencia" type="file" multiple accept="image/*,video/*,application/pdf"/>
       </div>
 
       <div class="form-group">
-        <label>Supervisor</label>
+        <label for="supervisor">Supervisor</label>
         <select id="supervisor" name="supervisor" required>
           <option value="">Seleccione supervisor</option>
-          <option>Pedro</option><option>Sandra</option><option>Leticia</option><option>Alfredo</option>
-          <option>Paco</option><option>Liliana</option><option>JuanaF</option>
+          <option>Pedro</option>
+          <option>Sandra</option>
+          <option>Leticia</option>
+          <option>Alfredo</option>
+          <option>Paco</option>
+          <option>Liliana</option>
+          <option>JuanaF</option>
         </select>
       </div>
 
       <div class="form-group">
-        <label>Técnico asignado</label>
+        <label for="tecnico">Técnico asignado</label>
         <select id="tecnico" name="tecnicoAsignado" required>
           <option value="">Seleccione técnico</option>
-          <option>Baron</option><option>Cecilio</option>
+          <option>Baron</option>
+          <option>Cecilio</option>
         </select>
       </div>
 
@@ -167,8 +175,8 @@
 
     function applyTheme() {
       const th = tg.themeParams;
-      document.body.style.backgroundColor = th.background_color || '#faf8f2';
-      document.querySelector('.container').style.backgroundColor = th.bg_color || '#fff8e1';
+      document.body.style.backgroundColor = th.background_color || 'var(--bg)';
+      document.querySelector('.container').style.backgroundColor = th.bg_color || 'var(--card-bg)';
     }
 
     function generarIdUnico() {
@@ -181,38 +189,59 @@
       document.getElementById('reportId').value = generarIdUnico();
     });
 
-    // compresión de imágenes/vídeos idéntica a tus otros códigos...
-    async function compressImage(file,maxWidth=1200,quality=0.7){ /*...*/ }
-    async function compressVideo(file){ return file; }
+    // placeholder: compresión de imágenes/vídeos (idéntica a tu flujo previo)
+    async function compressImage(file, maxWidth=1200, quality=0.7) {
+      /* ... tu implementación ... */
+      return file;
+    }
+    async function compressVideo(file) {
+      /* ... tu implementación ... */
+      return file;
+    }
 
     async function enviarReporte(e) {
       e.preventDefault();
+      const form = document.getElementById('form');
       const fd = new FormData();
+
+      // 1) Campos de texto/select/textarea
       ['reportId','tienda','tipoProblema','prioridad','descripcion','supervisor','tecnicoAsignado']
-        .forEach(k => fd.append(k, document.getElementById(k).value));
+        .forEach(name => {
+          const el = form.elements[name];
+          if (el) fd.append(name, el.value);
+        });
+
+      // 2) Fecha
       fd.append('fecha', new Date().toISOString());
 
-      const files = Array.from(document.getElementById('evidencia').files);
-      if(files.length>6){ return alert('Máximo 6 archivos.'); }
-      for(const f of files){
-        const blob = f.type.startsWith('image/')
-                   ? await compressImage(f)
+      // 3) Archivos
+      const files = Array.from(form.elements['evidencia'].files);
+      if (files.length > 6) {
+        alert('Máximo 6 archivos.');
+        return;
+      }
+      for (const f of files) {
+        const blob = f.type.startsWith('image/') 
+                   ? await compressImage(f) 
                    : await compressVideo(f);
-        fd.append('evidencia', blob);
+        fd.append('evidencia', blob, f.name);
       }
 
+      // 4) Envío al webhook
       try {
         const res = await fetch('https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz', {
-          method:'POST', body: fd
+          method: 'POST',
+          body: fd
         });
-        if(!res.ok) throw res.statusText;
+        if (!res.ok) throw await res.text();
         alert('✅ Reporte enviado con éxito');
-        document.getElementById('form').reset();
+        form.reset();
       } catch(err) {
         console.error(err);
-        alert('❌ Error al enviar');
+        alert('❌ Error al enviar: ' + err);
       }
     }
   </script>
 </body>
 </html>
+
