@@ -8,13 +8,13 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root {
-      --bg: #faf8f2;              /* crema claro */
-      --card-bg: #fff8e1;         /* crema */
+      --bg: #faf8f2;
+      --card-bg: #fff8e1;
       --text: #333333;
-      --label: #6F4E37;           /* café */
+      --label: #6F4E37;
       --border: #e0e0e0;
-      --accent: #6F4E37;          /* café (botón) */
-      --accent-hover: #563C2D;    /* café oscuro al hover */
+      --accent: #6F4E37;
+      --accent-hover: #563C2D;
       --radius: 8px;
       --spacing: 1rem;
       --font-body: 'Inter', sans-serif;
@@ -97,7 +97,6 @@
 <body>
   <div class="container">
     <img src="logo LM mantenimientocafe.png" alt="Logo LM Mantenimiento" class="logo" />
-
     <h2>🚨 Reporte de Mantenimiento</h2>
 
     <form id="form" onsubmit="enviarReporte(event)">
@@ -142,20 +141,6 @@
       </div>
 
       <div class="form-group">
-        <label for="supervisor">Supervisor</label>
-        <select id="supervisor" name="supervisor" required>
-          <option value="">Seleccione supervisor</option>
-          <option>Pedro</option>
-          <option>Sandra</option>
-          <option>Leticia</option>
-          <option>Alfredo</option>
-          <option>Paco</option>
-          <option>Liliana</option>
-          <option>JuanaF</option>
-        </select>
-      </div>
-
-      <div class="form-group">
         <label for="tecnico">Técnico asignado</label>
         <select id="tecnico" name="tecnicoAsignado" required>
           <option value="">Seleccione técnico</option>
@@ -169,89 +154,82 @@
   </div>
 
   <script>
-  const tg = window.Telegram?.WebApp;
-  tg?.onEvent('themeChanged', applyTheme);
-  tg?.ready();
+    const tg = window.Telegram?.WebApp;
+    tg?.onEvent('themeChanged', applyTheme);
+    tg?.ready();
 
-  function applyTheme() {
-    const th = tg.themeParams;
-    document.body.style.backgroundColor = th.background_color || 'var(--bg)';
-    document.querySelector('.container').style.backgroundColor = th.bg_color || 'var(--card-bg)';
-  }
+    function applyTheme() {
+      const th = tg.themeParams;
+      document.body.style.backgroundColor = th.background_color || 'var(--bg)';
+      document.querySelector('.container').style.backgroundColor = th.bg_color || 'var(--card-bg)';
+    }
 
-  function generarIdUnico() {
-    return window.crypto?.randomUUID?.() ||
-           (Date.now().toString(36) + '-' + Math.floor(Math.random()*1e6).toString(36));
-  }
+    function generarIdUnico() {
+      return window.crypto?.randomUUID?.() ||
+             (Date.now().toString(36) + '-' + Math.floor(Math.random()*1e6).toString(36));
+    }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    applyTheme();
-    document.getElementById('reportId').value = generarIdUnico();
-  });
+    document.addEventListener('DOMContentLoaded', () => {
+      applyTheme();
+      document.getElementById('reportId').value = generarIdUnico();
+    });
 
-  // placeholder: compresión de imágenes/vídeos (idéntica a tu flujo previo)
-  async function compressImage(file, maxWidth=1200, quality=0.7) {
-    /* ... tu implementación ... */
-    return file;
-  }
-  async function compressVideo(file) {
-    /* ... tu implementación ... */
-    return file;
-  }
+    async function compressImage(file, maxWidth=1200, quality=0.7) {
+      // Tu lógica actual
+      return file;
+    }
+    async function compressVideo(file) {
+      // Tu lógica actual
+      return file;
+    }
 
-  async function enviarReporte(e) {
-    e.preventDefault();
-    const form = document.getElementById('form');
-    const fd = new FormData();
+    async function enviarReporte(e) {
+      e.preventDefault();
+      const form = document.getElementById('form');
+      const fd = new FormData();
 
-    // 1) Campos sin supervisor
-    ['reportId','tienda','tipoProblema','prioridad','descripcion','tecnicoAsignado']
-      .forEach(name => {
+      ['reportId','tienda','tipoProblema','prioridad','descripcion','tecnicoAsignado'].forEach(name => {
         const el = form.elements[name];
         if (el) fd.append(name, el.value);
       });
 
-    // 1.1) Captura automática del chat_id desde Telegram
-    const chatId = tg?.initDataUnsafe?.user?.id;
-    if (chatId) {
-      fd.append('chat_id', chatId);
-    } else {
-      alert('❌ No se pudo obtener tu chat ID desde Telegram. Abre esta mini app desde Telegram directamente.');
-      return;
-    }
+      const chatId = tg?.initDataUnsafe?.user?.id;
+      if (chatId) {
+        fd.append('chat_id', chatId);
+      } else {
+        alert('❌ No se pudo obtener tu chat ID desde Telegram. Abre esta mini app desde Telegram directamente.');
+        return;
+      }
 
-    // 2) Fecha
-    fd.append('fecha', new Date().toISOString());
+      fd.append('fecha', new Date().toISOString());
 
-    // 3) Archivos
-    const files = Array.from(form.elements['evidencia'].files);
-    if (files.length > 6) {
-      alert('Máximo 6 archivos.');
-      return;
-    }
-    for (const f of files) {
-      const blob = f.type.startsWith('image/') 
-                 ? await compressImage(f) 
-                 : await compressVideo(f);
-      fd.append('evidencia', blob, f.name);
-    }
+      const files = Array.from(form.elements['evidencia'].files);
+      if (files.length > 6) {
+        alert('Máximo 6 archivos.');
+        return;
+      }
+      for (const f of files) {
+        const blob = f.type.startsWith('image/') 
+                   ? await compressImage(f) 
+                   : await compressVideo(f);
+        fd.append('evidencia', blob, f.name);
+      }
 
-    // 4) Envío al webhook
-    try {
-      const res = await fetch('https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz', {
-        method: 'POST',
-        body: fd
-      });
-      if (!res.ok) throw await res.text();
-      alert('✅ Reporte enviado con éxito');
-      form.reset();
-    } catch(err) {
-      console.error(err);
-      alert('❌ Error al enviar: ' + err);
+      try {
+        const res = await fetch('https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz', {
+          method: 'POST',
+          body: fd
+        });
+        if (!res.ok) throw await res.text();
+        alert('✅ Reporte enviado con éxito');
+        form.reset();
+      } catch(err) {
+        console.error(err);
+        alert('❌ Error al enviar: ' + err);
+      }
     }
-  }
-</script>
-
+  </script>
 </body>
 </html>
+
 
