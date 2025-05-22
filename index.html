@@ -1,193 +1,103 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>🚨 Reporte LM Mantenimiento</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-      :root {
-        --bg-color: #f0f2f5;
-        --container-bg: #ffffff;
-        --text-color: #333333;
-        --secondary-text: #555555;
-        --border-color: #cccccc;
-        --button-bg: #0088cc;
-        --button-text: #ffffff;
-      }
-      body {
-        margin: 0;
-        padding: 0;
-        background-color: var(--bg-color);
-        font-family: Helvetica, Arial, sans-serif;
-        color: var(--text-color);
-      }
-      .container {
-        max-width: 480px;
-        margin: 20px auto;
-        background: var(--container-bg);
-        border-radius: 10px;
-        box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-      }
-      h2 {
-        margin-top: 0;
-        text-align: center;
-        font-size: 1.5em;
-      }
-      label {
-        display: block;
-        margin-bottom: 4px;
-        font-weight: bold;
-        color: var(--secondary-text);
-      }
-      input,
-      select,
-      textarea,
-      button {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 16px;
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
-        font-size: 1em;
-        color: var(--text-color);
-        background-color: var(--container-bg);
-      }
-      #reportId {
-        background-color: var(--container-bg) !important;
-        color: var(--text-color) !important;
-      }
-      input::placeholder,
-      textarea::placeholder {
-        color: var(--border-color);
-      }
-      input[readonly] {
-        cursor: not-allowed;
-        background-color: var(--container-bg) !important;
-      }
-      button {
-        background-color: var(--button-bg);
-        color: var(--button-text);
-        border: none;
-        font-weight: bold;
-      }
-      button:hover {
-        opacity: 0.9;
-      }
-    </style>
-    <script>
-      window.Telegram?.WebApp?.onEvent('themeChanged', () => applyTheme());
-      window.Telegram?.WebApp?.ready();
-
-      function applyTheme() {
-        const theme = window.Telegram.WebApp.themeParams;
-        document.documentElement.style.setProperty('--bg-color', theme.background_color || '#f0f2f5');
-        document.documentElement.style.setProperty('--container-bg', theme.bg_color || '#ffffff');
-        document.documentElement.style.setProperty('--text-color', theme.text_color || '#333333');
-        document.documentElement.style.setProperty('--secondary-text', theme.hint_color || '#555555');
-        document.documentElement.style.setProperty('--border-color', theme.hint_color || '#cccccc');
-        document.documentElement.style.setProperty('--button-bg', theme.button_color || '#0088cc');
-        document.documentElement.style.setProperty('--button-text', theme.button_text_color || '#ffffff');
-      }
-
-      function generarIdUnico() {
-        if (window.crypto && crypto.randomUUID) {
-          return crypto.randomUUID();
-        }
-        return Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e6).toString(36);
-      }
-
-      function compressImage(file, maxWidth = 1200, quality = 0.7) {
-        return new Promise(resolve => {
-          const img = new Image();
-          img.onload = () => {
-            const scale = Math.min(1, maxWidth / img.width);
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width * scale;
-            canvas.height = img.height * scale;
-            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-            canvas.toBlob(blob => {
-              resolve(new File([blob], file.name, { type: 'image/jpeg' }));
-            }, 'image/jpeg', quality);
-          };
-          const reader = new FileReader();
-          reader.onload = e => img.src = e.target.result;
-          reader.readAsDataURL(file);
-        });
-      }
-
-      // Placeholder: integrarse con ffmpeg.wasm para comprimir video
-      async function compressVideo(file) {
-        // TODO: usar ffmpeg.wasm para transcodificar a menor resolución/bitrate
-        return file;
-      }
-
-      async function enviarReporte(event) {
-        event.preventDefault();
-        const idField = document.getElementById('reportId');
-        const newId = generarIdUnico();
-        idField.value = newId;
-
-        const data = {
-          id: newId,
-          fecha: new Date().toISOString(),
-          tienda: document.getElementById('tienda').value,
-          tipoProblema: document.getElementById('tipo').value,
-          prioridad: document.getElementById('prioridad').value,
-          descripcion: document.getElementById('descripcion').value,
-          supervisor: document.getElementById('supervisor').value,
-          tecnicoAsignado: document.getElementById('tecnico').value
-        };
-
-        const form = new FormData();
-        Object.entries(data).forEach(([k,v]) => form.append(k, v));
-
-        const input = document.getElementById('evidencia');
-        const files = Array.from(input.files);
-        if (files.length > 6) {
-          alert('Máximo 6 archivos.');
-          return;
-        }
-
-        for (const file of files) {
-          if (file.type.startsWith('image/')) {
-            const img = await compressImage(file);
-            form.append('evidencia', img);
-          } else if (file.type.startsWith('video/')) {
-            // los videos se envían sin compresión o con FFmpeg más adelante
-            const vid = await compressVideo(file);
-            form.append('evidencia', vid);
-          } else {
-            form.append('evidencia', file);
-          }
-        }
-
-        try {
-          const res = await fetch('https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz', { method: 'POST', body: form });
-          if (!res.ok) throw new Error(res.statusText);
-          alert('✅ Reporte enviado con éxito');
-          document.getElementById('form').reset();
-          window.Telegram?.WebApp?.sendData(JSON.stringify(data));
-        } catch (err) {
-          console.error(err);
-          alert('❌ Error al enviar. Revisa la consola.');
-        }
-      }
-
-      window.addEventListener('DOMContentLoaded', () => {
-        applyTheme();
-        document.getElementById('reportId').value = generarIdUnico();
-      });
-    </script>
-  </head>
-  <body>
-    <div class="container">
-      <h2>🚨 Reporte de Incidencia</h2>
-      <form id="form" onsubmit="enviarReporte(event)">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🚨 Reporte de Mantenimiento</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: #faf8f2;
+      --card-bg: #fff8e1;
+      --text: #333333;
+      --label-color: #6F4E37; /* preguntas en café */
+      --accent: #0088cc;
+      --accent-hover: #007bb5;
+      --border: #e0e0e0;
+      --radius: 8px;
+      --spacing: 1rem;
+      --font-body: 'Inter', sans-serif;
+      --font-heading: 'Playfair Display', serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .container {
+      background: var(--card-bg);
+      padding: calc(var(--spacing) * 1.5);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      width: 100%;
+      max-width: 480px;
+      animation: fadeIn 0.4s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
+    .logo { display: block; margin: 0 auto 1rem; width: 300px; height: auto; }
+    h2 {
+      margin: 0 0 1rem;
+      font-family: var(--font-heading);
+      font-weight: 700;
+      text-align: center;
+      color: var(--accent);
+      font-size: 2.5rem;
+      line-height: 1.2;
+    }
+    .form-group { margin-top: var(--spacing); }
+    label {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--label-color);
+      margin-bottom: 0.25rem;
+      font-weight: 500;
+    }
+    input[type="text"], select, textarea, input[type="file"] {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      transition: border-color 0.2s;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+    button {
+      width: 100%;
+      padding: 1rem;
+      margin-top: var(--spacing);
+      font-family: var(--font-heading);
+      font-weight: 700;
+      color: #fff;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: background 0.2s;
+      font-size: 1rem;
+    }
+    button:hover { background: var(--accent-hover); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="logo LM mantenimiento.png" alt="logo LM mantenimientocafe" class="logo" />
+    <h2>🚨 Reporte de Mantenimiento</h2>
+    <form id="form" onsubmit="enviarReporte(event)">
+      <div class="form-group">
         <label>ID del Reporte</label>
         <input id="reportId" name="reportId" type="text" readonly placeholder="—" />
-
+      </div>
+      <div class="form-group">
         <label>Tienda</label>
         <select id="tienda" name="tienda" required>
           <option value="">Seleccione una tienda</option>
@@ -195,10 +105,12 @@
           <option value="Tienda 2">Tienda 2</option>
           <option value="Tienda 3">Tienda 3</option>
         </select>
-
+      </div>
+      <div class="form-group">
         <label>Tipo de problema</label>
         <input id="tipo" name="tipoProblema" type="text" placeholder="Describe el problema" required />
-
+      </div>
+      <div class="form-group">
         <label>Prioridad</label>
         <select id="prioridad" name="prioridad" required>
           <option value="">Seleccione prioridad</option>
@@ -206,41 +118,66 @@
           <option value="Media">Media</option>
           <option value="Baja">Baja</option>
         </select>
-
+      </div>
+      <div class="form-group">
         <label>Descripción</label>
         <textarea id="descripcion" name="descripcion" rows="3" placeholder="Detalles adicionales..." required></textarea>
-
-        <label>Subir evidencia (max 6 archivos; imagen, video o PDF)</label>
+      </div>
+      <div class="form-group">
+        <label>Subir evidencia máx 6 archivos</label>
         <input id="evidencia" name="evidencia" type="file" multiple accept="image/*,video/*,application/pdf" />
-
+      </div>
+      <div class="form-group">
         <label>Supervisor</label>
         <select id="supervisor" name="supervisor" required>
           <option value="">Seleccione supervisor</option>
-          <option value="Pedro">Pedro</option>
-          <option value="Sandra">Sandra</option>
-          <option value="Leticia">Leticia</option>
-          <option value="Alfredo">Alfredo</option>
-          <option value="Paco">Paco</option>
-          <option value="Liliana">Liliana</option>
-          <option value="JuanaF">JuanaF</option>
+          <option>Pedro</option><option>Sandra</option><option>Leticia</option><option>Alfredo</option>
+          <option>Paco</option><option>Liliana</option><option>JuanaF</option>
         </select>
-
+      </div>
+      <div class="form-group">
         <label>Técnico asignado</label>
         <select id="tecnico" name="tecnicoAsignado" required>
           <option value="">Seleccione técnico</option>
-          <option value="Baron">Baron</option>
-          <option value="Cecilio">Cecilio</option>
+          <option>Baron</option><option>Cecilio</option>
         </select>
-
-        <button type="submit">Enviar Reporte</button>
-      </form>
-    </div>
-  </body>
+      </div>
+      <button type="submit">Enviar Reporte</button>
+    </form>
+  </div>
+  <script>
+    const tg = window.Telegram?.WebApp;
+    tg?.onEvent('themeChanged', applyTheme);
+    tg?.ready();
+    function applyTheme() {
+      const th = tg.themeParams;
+      document.documentElement.style.setProperty('--bg', th.background_color || '#faf8f2');
+      document.documentElement.style.setProperty('--card-bg', th.bg_color || '#fff8e1');
+      document.documentElement.style.setProperty('--text', th.text_color || '#333333');
+      document.documentElement.style.setProperty('--label-color', th.hint_color || '#6F4E37');
+      document.documentElement.style.setProperty('--border', th.hint_color || '#e0e0e0');
+      document.documentElement.style.setProperty('--accent', th.button_color || '#0088cc');
+      document.documentElement.style.setProperty('--button-text', th.button_text_color || '#ffffff');
+    }
+    function generarIdUnico() {
+      return window.crypto?.randomUUID?.() || (Date.now().toString(36) + '-' + Math.floor(Math.random()*1e6).toString(36));
+    }
+    document.addEventListener('DOMContentLoaded', ()=>{
+      applyTheme();
+      document.getElementById('reportId').value = generarIdUnico();
+    });
+    async function compressImage(file,maxWidth=1200,quality=0.7){return new Promise(res=>{const img=new Image();img.onload=()=>{const c=document.createElement('canvas'),scale=Math.min(1,maxWidth/img.width);c.width=img.width*scale;c.height=img.height*scale;c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(b=>res(new File([b],file.name,{type:'image/jpeg'})),'image/jpeg',quality);};const r=new FileReader();r.onload=e=>img.src=e.target.result;r.readAsDataURL(file);});}
+    async function compressVideo(f){return f;}
+    async function enviarReporte(e){
+      e.preventDefault();
+      const fd=new FormData();
+      ['reportId','tienda','tipoProblema','prioridad','descripcion','supervisor','tecnicoAsignado'].forEach(k=>fd.append(k,document.getElementById(k).value));
+      fd.append('fecha',new Date().toISOString());
+      const files=Array.from(document.getElementById('evidencia').files);
+      if(files.length>6){alert('Máximo 6 archivos.');return;}
+      for(const f of files){fd.append('evidencia',f.type.startsWith('image/')?await compressImage(f):await compressVideo(f));}
+      try{const r=await fetch('https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz',{method:'POST',body:fd});if(!r.ok)throw r.statusText;alert('✅ Reporte enviado con éxito');document.getElementById('form').reset();}catch(err){console.error(err);alert('❌ Error al enviar');}
+    }
+  </script>
+</body>
 </html>
-
-
-
-
-
-
-
