@@ -205,11 +205,21 @@
       const fd = new FormData();
 
       // 1) Campos de texto/select/textarea
-      ['reportId','tienda','tipoProblema','prioridad','descripcion','supervisor','tecnicoAsignado']
-        .forEach(name => {
-          const el = form.elements[name];
-          if (el) fd.append(name, el.value);
-        });
+['reportId','tienda','tipoProblema','prioridad','descripcion','supervisor','tecnicoAsignado']
+  .forEach(name => {
+    const el = form.elements[name];
+    if (el) fd.append(name, el.value);
+  });
+
+// 1.1) Captura automática del chat_id desde Telegram
+const chatId = tg?.initDataUnsafe?.user?.id;
+if (chatId) {
+  fd.append('chat_id', chatId);
+} else {
+  alert('❌ No se pudo obtener tu chat ID desde Telegram. Abre esta mini app desde Telegram directamente.');
+  return;
+}
+
 
       // 2) Fecha
       fd.append('fecha', new Date().toISOString());
