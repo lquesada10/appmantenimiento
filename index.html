@@ -189,7 +189,7 @@
         if (el) fd.append(name, el.value);
       });
 
-      fd.append('fecha', new Date().toISOString());
+      fd.append('fecha', new Date().toLocaleString('es-MX'));
 
       const files = Array.from(form.elements['evidencia'].files);
       if (files.length > 6) {
