@@ -23,12 +23,12 @@
     * { box-sizing: border-box; }
     html, body {
       margin: 0; padding: 0;
-      background: var(--bg) !important;
+      background: var(--bg);
       width: 100%; height: 100%;
       font-family: var(--font-body);
     }
     .container {
-      background: var(--card-bg) !important;
+      background: var(--card-bg);
       max-width: 480px;
       margin: 1rem auto;
       padding: calc(var(--spacing) * 1.5);
@@ -45,7 +45,7 @@
       margin: 0 0 1rem;
       font-family: var(--font-heading);
       font-size: 2.5rem;
-      color: var(--label) !important;
+      color: var(--label);
       text-align: center;
       line-height: 1.2;
     }
@@ -93,23 +93,19 @@
     }
   </style>
 </head>
-
 <body>
   <div class="container">
     <img src="logo LM mantenimientocafe.png" alt="Logo LM Mantenimiento" class="logo" />
     <h2>🚨 Reporte de Mantenimiento</h2>
-
     <form id="form" onsubmit="enviarReporte(event)">
       <div class="form-group">
         <label for="reportId">ID del Reporte</label>
-        <input id="reportId" name="reportId" type="text" readonly placeholder="—" />
+        <input id="reportId" name="reportId" type="text" placeholder="ID" />
       </div>
-
-      <div class="form-group" id="manualChatGroup" style="display: none;">
-        <label for="manualChat">Chat ID (solo modo manual)</label>
-        <input id="manualChat" name="chat_id" type="text" placeholder="123456789" />
+      <div class="form-group">
+        <label for="manualChatId">Chat ID (solo modo manual)</label>
+        <input id="manualChatId" name="manualChatId" type="text" placeholder="123456789 (solo modo manual)" />
       </div>
-
       <div class="form-group">
         <label for="tienda">Tienda</label>
         <select id="tienda" name="tienda" required>
@@ -119,12 +115,10 @@
           <option>Tienda 3</option>
         </select>
       </div>
-
       <div class="form-group">
         <label for="tipo">Tipo de problema</label>
         <input id="tipo" name="tipoProblema" type="text" placeholder="Describe el problema" required />
       </div>
-
       <div class="form-group">
         <label for="prioridad">Prioridad</label>
         <select id="prioridad" name="prioridad" required>
@@ -134,17 +128,14 @@
           <option>Baja</option>
         </select>
       </div>
-
       <div class="form-group">
         <label for="descripcion">Descripción</label>
         <textarea id="descripcion" name="descripcion" rows="3" placeholder="Detalles adicionales..." required></textarea>
       </div>
-
       <div class="form-group">
         <label for="evidencia">Subir evidencia máx 6 archivos</label>
         <input id="evidencia" name="evidencia" type="file" multiple accept="image/*,video/*,application/pdf"/>
       </div>
-
       <div class="form-group">
         <label for="tecnico">Técnico asignado</label>
         <select id="tecnico" name="tecnicoAsignado" required>
@@ -153,96 +144,61 @@
           <option>Cecilio</option>
         </select>
       </div>
-
       <button type="submit">Enviar Reporte</button>
     </form>
   </div>
-
   <script>
     const tg = window.Telegram?.WebApp;
-    tg?.onEvent('themeChanged', applyTheme);
     tg?.ready();
 
-    const chatId = tg?.initDataUnsafe?.user?.id;
-    const manualMode = new URLSearchParams(window.location.search).get('manual') === '1';
-
-    function applyTheme() {
-      const th = tg.themeParams;
-      document.body.style.backgroundColor = th?.background_color || 'var(--bg)';
-      document.querySelector('.container').style.backgroundColor = th?.bg_color || 'var(--card-bg)';
-    }
-
-    function generarIdUnico() {
-      return window.crypto?.randomUUID?.() ||
-             (Date.now().toString(36) + '-' + Math.floor(Math.random()*1e6).toString(36));
-    }
+    const params = new URLSearchParams(location.search);
+    const modoManual = params.get('modo') === 'manual';
 
     document.addEventListener('DOMContentLoaded', () => {
-      applyTheme();
-      const reportField = document.getElementById('reportId');
-      const chatField = document.getElementById('manualChat');
-
-      if (manualMode) {
-        reportField.removeAttribute('readonly');
-        document.getElementById('manualChatGroup').style.display = 'block';
-      } else {
-        reportField.value = generarIdUnico();
-      }
+      const idInput = document.getElementById('reportId');
+      idInput.readOnly = !modoManual;
+      idInput.value = generarIdUnico();
     });
 
-    async function compressImage(file, maxWidth=1200, quality=0.7) {
-      return file;
-    }
-    async function compressVideo(file) {
-      return file;
+    function generarIdUnico() {
+      return crypto.randomUUID?.() || `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
     }
 
     async function enviarReporte(e) {
       e.preventDefault();
-      const form = document.getElementById('form');
-      const fd = new FormData();
-
-      ['reportId','tienda','tipoProblema','prioridad','descripcion','tecnicoAsignado'].forEach(name => {
-        const el = form.elements[name];
-        if (el) fd.append(name, el.value);
-      });
-
-      const finalChatId = manualMode ? form.elements['chat_id'].value : chatId;
-      if (finalChatId) {
-        fd.append('chat_id', finalChatId);
-      } else {
-        alert('❌ No se pudo obtener tu chat ID.');
-        return;
-      }
-
+      const fd = new FormData(document.getElementById('form'));
       fd.append('fecha', new Date().toISOString());
 
-      const files = Array.from(form.elements['evidencia'].files);
-      if (files.length > 6) {
-        alert('Máximo 6 archivos.');
+      let chatId = document.getElementById('manualChatId').value;
+      if (!chatId && tg?.initDataUnsafe?.user?.id) {
+        chatId = tg.initDataUnsafe.user.id;
+      }
+      if (!chatId) {
+        alert('No se pudo obtener tu Chat ID.');
         return;
       }
-      for (const f of files) {
-        const blob = f.type.startsWith('image/') 
-                   ? await compressImage(f) 
-                   : await compressVideo(f);
-        fd.append('evidencia', blob, f.name);
-      }
+      fd.append('chat_id', chatId);
+
+      const files = Array.from(document.getElementById('evidencia').files);
+      if (files.length > 6) return alert('Máximo 6 archivos.');
+
+      for (const f of files) fd.append('evidencia', f);
 
       try {
         const res = await fetch('https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz', {
           method: 'POST',
           body: fd
         });
-        if (!res.ok) throw await res.text();
+        if (!res.ok) throw new Error(await res.text());
         alert('✅ Reporte enviado con éxito');
-        form.reset();
-      } catch(err) {
+        document.getElementById('form').reset();
+      } catch (err) {
         console.error(err);
-        alert('❌ Error al enviar: ' + err);
+        alert('❌ Error al enviar: ' + err.message);
       }
     }
   </script>
 </body>
 </html>
+
 
