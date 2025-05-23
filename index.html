@@ -23,11 +23,12 @@
     * { box-sizing: border-box; }
     html, body {
       margin: 0; padding: 0;
-      background: var(--bg);
+      background: var(--bg) !important;
+      width: 100%; height: 100%;
       font-family: var(--font-body);
     }
     .container {
-      background: var(--card-bg);
+      background: var(--card-bg) !important;
       max-width: 480px;
       margin: 1rem auto;
       padding: calc(var(--spacing) * 1.5);
@@ -44,7 +45,7 @@
       margin: 0 0 1rem;
       font-family: var(--font-heading);
       font-size: 2.5rem;
-      color: var(--label);
+      color: var(--label) !important;
       text-align: center;
       line-height: 1.2;
     }
@@ -56,12 +57,15 @@
       margin-bottom: 0.25rem;
       font-weight: 500;
     }
-    input, select, textarea {
+    input[type="text"],
+    select,
+    textarea,
+    input[type="file"] {
       width: 100%;
       padding: 0.75rem;
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      background: #fff;
+      background: #ffffff;
       color: var(--text);
       font-family: var(--font-body);
       transition: border-color 0.2s;
@@ -89,19 +93,23 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <img src="logo LM mantenimientocafe.png" alt="Logo LM Mantenimiento" class="logo" />
     <h2>🚨 Reporte de Mantenimiento</h2>
+
     <form id="form" onsubmit="enviarReporte(event)">
       <div class="form-group">
         <label for="reportId">ID del Reporte</label>
-        <input id="reportId" name="reportId" type="text" placeholder="ID…" />
+        <input id="reportId" name="reportId" type="text" readonly placeholder="—" />
       </div>
-      <div class="form-group">
-        <label for="chatId">Chat ID (solo modo manual)</label>
-        <input id="chatId" name="chat_id" type="text" placeholder="Chat ID opcional" />
+
+      <div class="form-group" id="manualChatGroup" style="display: none;">
+        <label for="manualChat">Chat ID (solo modo manual)</label>
+        <input id="manualChat" name="chat_id" type="text" placeholder="123456789" />
       </div>
+
       <div class="form-group">
         <label for="tienda">Tienda</label>
         <select id="tienda" name="tienda" required>
@@ -111,10 +119,12 @@
           <option>Tienda 3</option>
         </select>
       </div>
+
       <div class="form-group">
         <label for="tipo">Tipo de problema</label>
-        <input id="tipo" name="tipoProblema" type="text" required />
+        <input id="tipo" name="tipoProblema" type="text" placeholder="Describe el problema" required />
       </div>
+
       <div class="form-group">
         <label for="prioridad">Prioridad</label>
         <select id="prioridad" name="prioridad" required>
@@ -124,14 +134,17 @@
           <option>Baja</option>
         </select>
       </div>
+
       <div class="form-group">
         <label for="descripcion">Descripción</label>
-        <textarea id="descripcion" name="descripcion" rows="3" required></textarea>
+        <textarea id="descripcion" name="descripcion" rows="3" placeholder="Detalles adicionales..." required></textarea>
       </div>
+
       <div class="form-group">
-        <label for="evidencia">Evidencia (máx 6 archivos)</label>
-        <input id="evidencia" name="evidencia" type="file" multiple accept="image/*,video/*,application/pdf" />
+        <label for="evidencia">Subir evidencia máx 6 archivos</label>
+        <input id="evidencia" name="evidencia" type="file" multiple accept="image/*,video/*,application/pdf"/>
       </div>
+
       <div class="form-group">
         <label for="tecnico">Técnico asignado</label>
         <select id="tecnico" name="tecnicoAsignado" required>
@@ -140,34 +153,49 @@
           <option>Cecilio</option>
         </select>
       </div>
+
       <button type="submit">Enviar Reporte</button>
     </form>
   </div>
+
   <script>
     const tg = window.Telegram?.WebApp;
     tg?.onEvent('themeChanged', applyTheme);
     tg?.ready();
 
+    const chatId = tg?.initDataUnsafe?.user?.id;
+    const manualMode = new URLSearchParams(window.location.search).get('manual') === '1';
+
     function applyTheme() {
-      const th = tg?.themeParams || {};
-      document.body.style.backgroundColor = th.background_color || 'var(--bg)';
-      document.querySelector('.container').style.backgroundColor = th.bg_color || 'var(--card-bg)';
+      const th = tg.themeParams;
+      document.body.style.backgroundColor = th?.background_color || 'var(--bg)';
+      document.querySelector('.container').style.backgroundColor = th?.bg_color || 'var(--card-bg)';
     }
 
     function generarIdUnico() {
-      return window.crypto?.randomUUID?.() || Date.now().toString(36) + '-' + Math.floor(Math.random()*1e6).toString(36);
+      return window.crypto?.randomUUID?.() ||
+             (Date.now().toString(36) + '-' + Math.floor(Math.random()*1e6).toString(36));
     }
 
     document.addEventListener('DOMContentLoaded', () => {
       applyTheme();
-      const urlParams = new URLSearchParams(window.location.search);
-      const modoManual = urlParams.get('modo') === 'manual';
-      if (!modoManual) {
-        document.getElementById('reportId').value = generarIdUnico();
-        document.getElementById('reportId').readOnly = true;
-        document.getElementById('chatId').style.display = 'none';
+      const reportField = document.getElementById('reportId');
+      const chatField = document.getElementById('manualChat');
+
+      if (manualMode) {
+        reportField.removeAttribute('readonly');
+        document.getElementById('manualChatGroup').style.display = 'block';
+      } else {
+        reportField.value = generarIdUnico();
       }
     });
+
+    async function compressImage(file, maxWidth=1200, quality=0.7) {
+      return file;
+    }
+    async function compressVideo(file) {
+      return file;
+    }
 
     async function enviarReporte(e) {
       e.preventDefault();
@@ -179,14 +207,11 @@
         if (el) fd.append(name, el.value);
       });
 
-      const chatIdField = form.elements['chat_id'];
-      const chatIdManual = chatIdField?.value;
-      const chatIdAuto = tg?.initDataUnsafe?.user?.id;
-      const finalChatId = chatIdManual || chatIdAuto;
+      const finalChatId = manualMode ? form.elements['chat_id'].value : chatId;
       if (finalChatId) {
         fd.append('chat_id', finalChatId);
       } else {
-        alert('❌ No se pudo obtener tu Chat ID.');
+        alert('❌ No se pudo obtener tu chat ID.');
         return;
       }
 
@@ -197,9 +222,11 @@
         alert('Máximo 6 archivos.');
         return;
       }
-
       for (const f of files) {
-        fd.append('evidencia', f);
+        const blob = f.type.startsWith('image/') 
+                   ? await compressImage(f) 
+                   : await compressVideo(f);
+        fd.append('evidencia', blob, f.name);
       }
 
       try {
@@ -218,3 +245,4 @@
   </script>
 </body>
 </html>
+
