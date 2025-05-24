@@ -139,7 +139,7 @@
     });
 
     async function subirArchivo(file, path) {
-  const extension = file.name.split('.').pop().toLowerCase().replace(/\W+/g, '');
+  const extension = file.name.split('.').pop().toLowerCase();
   const nombreSeguro = `${path}/${crypto.randomUUID()}.${extension}`;
   const { error: uploadError } = await supabase.storage.from('evidencias').upload(nombreSeguro, file);
   if (uploadError) throw uploadError;
@@ -147,6 +147,7 @@
   const { data } = supabase.storage.from('evidencias').getPublicUrl(nombreSeguro);
   return data.publicUrl;
 }
+
 
 
 
