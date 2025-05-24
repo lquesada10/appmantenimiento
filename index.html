@@ -144,13 +144,14 @@
           <option>Cecilio</option>
         </select>
       </div>
-      <button type="button" onclick="enviarReporte()">Enviar Reporte</button>
+      <button type="submit">Enviar Reporte</button>
     </form>
   </div>
 
   <script>
     const tg = window.Telegram?.WebApp;
-    const supabase = window.supabase.createClient(
+    const { createClient } = supabase;
+    const supabaseClient = createClient(
       'https://gaiqdzjctyscufkljxvm.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInN1YiI6ImRhdGFiYXNlX2Fub24iLCJpYXQiOjE2ODc2MDYwODIsImV4cCI6MjAwMzU2MjA4Mn0.JFbRZekUAcqTwkLOaLgBlIXjjZrjMfuG-vV7Lz_5D60'
     );
@@ -163,32 +164,31 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      const params = new URLSearchParams(window.location.search);
-      const modoManual = params.get('modo') === 'manual';
+      const chatId = tg?.initDataUnsafe?.user?.id;
+      const modoManual = new URLSearchParams(window.location.search).get('modo') === 'manual';
 
-      const idField = document.getElementById('reportId');
+      const reportInput = document.getElementById('reportId');
       const chatInput = document.getElementById('chat_id');
 
-      if (!modoManual) {
-        idField.readOnly = true;
-        chatInput.readOnly = true;
-      }
+      reportInput.value = generarIdUnico();
+      reportInput.readOnly = !modoManual;
 
-      if (!idField.value) idField.value = generarIdUnico();
-      const chatId = tg?.initDataUnsafe?.user?.id;
       if (chatId) chatInput.value = chatId;
+      chatInput.readOnly = !modoManual;
     });
 
     async function subirArchivo(file, folder) {
       const filename = `${folder}/${Date.now()}_${file.name}`;
-      const { data, error } = await supabase.storage.from('evidencias').upload(filename, file);
+      const { error } = await supabaseClient.storage.from('evidencias').upload(filename, file);
       if (error) throw error;
-      const { data: publicUrl } = supabase.storage.from('evidencias').getPublicUrl(filename);
-      return publicUrl.publicUrl;
+      const { data } = supabaseClient.storage.from('evidencias').getPublicUrl(filename);
+      return data.publicUrl;
     }
 
-    async function enviarReporte() {
-      const form = document.getElementById('form');
+    document.getElementById('form').addEventListener('submit', async function (e) {
+      e.preventDefault();
+
+      const form = e.target;
       const id = document.getElementById('reportId').value;
       const chatId = document.getElementById('chat_id').value;
       const evidenciaFiles = Array.from(document.getElementById('evidencia').files);
@@ -201,7 +201,7 @@
         evidenciaUrls.push(url);
       }
 
-      const { error } = await supabase.from('reportes').insert({
+      const { error } = await supabaseClient.from('reportes').insert({
         id,
         chat_id: chatId,
         tienda: form.tienda.value,
@@ -220,7 +220,8 @@
 
       alert('✅ Reporte enviado con éxito');
       form.reset();
-    }
+    });
   </script>
 </body>
 </html>
+
