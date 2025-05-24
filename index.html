@@ -6,6 +6,7 @@
   <title>🚨 Reporte de Mantenimiento</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     :root {
       --bg: #faf8f2;
@@ -23,12 +24,12 @@
     * { box-sizing: border-box; }
     html, body {
       margin: 0; padding: 0;
-      background: var(--bg) !important;
+      background: var(--bg);
       width: 100%; height: 100%;
       font-family: var(--font-body);
     }
     .container {
-      background: var(--card-bg) !important;
+      background: var(--card-bg);
       max-width: 480px;
       margin: 1rem auto;
       padding: calc(var(--spacing) * 1.5);
@@ -45,7 +46,7 @@
       margin: 0 0 1rem;
       font-family: var(--font-heading);
       font-size: 2.5rem;
-      color: var(--label) !important;
+      color: var(--label);
       text-align: center;
       line-height: 1.2;
     }
@@ -57,7 +58,10 @@
       margin-bottom: 0.25rem;
       font-weight: 500;
     }
-    input[type="text"], select, textarea, input[type="file"] {
+    input,
+    select,
+    textarea,
+    input[type="file"] {
       width: 100%;
       padding: 0.75rem;
       border: 1px solid var(--border);
@@ -66,10 +70,6 @@
       color: var(--text);
       font-family: var(--font-body);
       transition: border-color 0.2s;
-    }
-    input:focus, textarea:focus, select:focus {
-      outline: none;
-      border-color: var(--accent);
     }
     button {
       width: 100%;
@@ -90,6 +90,7 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <img src="logo LM mantenimientocafe.png" alt="Logo LM Mantenimiento" class="logo" />
@@ -97,11 +98,7 @@
     <form id="form" onsubmit="enviarReporte(event)">
       <div class="form-group">
         <label for="reportId">ID del Reporte</label>
-        <input id="reportId" name="reportId" type="text" placeholder="ID generado..." />
-      </div>
-      <div class="form-group">
-        <label for="chatId">Chat ID</label>
-        <input id="chatId" name="chat_id" type="text" placeholder="Tu chat ID" />
+        <input id="reportId" name="reportId" type="text" readonly />
       </div>
       <div class="form-group">
         <label for="tienda">Tienda</label>
@@ -114,7 +111,7 @@
       </div>
       <div class="form-group">
         <label for="tipo">Tipo de problema</label>
-        <input id="tipo" name="tipoProblema" type="text" placeholder="Describe el problema" required />
+        <input id="tipo" name="tipoProblema" type="text" required />
       </div>
       <div class="form-group">
         <label for="prioridad">Prioridad</label>
@@ -127,11 +124,11 @@
       </div>
       <div class="form-group">
         <label for="descripcion">Descripción</label>
-        <textarea id="descripcion" name="descripcion" rows="3" placeholder="Detalles adicionales..." required></textarea>
+        <textarea id="descripcion" name="descripcion" required></textarea>
       </div>
       <div class="form-group">
-        <label for="evidencia">Subir evidencia máx 6 archivos</label>
-        <input id="evidencia" name="evidencia" type="file" multiple accept="image/*,video/*,application/pdf"/>
+        <label for="evidencia">Evidencia máx 6 archivos</label>
+        <input id="evidencia" name="evidencia" type="file" multiple accept="image/*,video/*"/>
       </div>
       <div class="form-group">
         <label for="tecnico">Técnico asignado</label>
@@ -144,79 +141,71 @@
       <button type="submit">Enviar Reporte</button>
     </form>
   </div>
+
   <script>
     const tg = window.Telegram?.WebApp;
-    tg?.onEvent('themeChanged', applyTheme);
+    const supabase = window.supabase.createClient(
+      'https://gaiqdzjctyscufkljxvm.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInN1YiI6ImdhaXFkenpjdHlzY3Vma2xqeHZtX3NlcnZpY2Vfcm9sZSIsImlhdCI6MTcwODYzNjg1MiwiZXhwIjoxNzM5MjEyODUyfQ.H14H5sV7YAKWzFgRkVa7OaZVli8rAVR3UoyEFnZz7yY'
+    );
+
+    tg?.onEvent('themeChanged', () => {});
     tg?.ready();
 
-    function applyTheme() {
-      const th = tg.themeParams;
-      document.body.style.backgroundColor = th.background_color || 'var(--bg)';
-      document.querySelector('.container').style.backgroundColor = th.bg_color || 'var(--card-bg)';
-    }
-
     function generarIdUnico() {
-      return window.crypto?.randomUUID?.() || (Date.now().toString(36) + '-' + Math.floor(Math.random()*1e6).toString(36));
+      return crypto.randomUUID();
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      applyTheme();
-      const params = new URLSearchParams(window.location.search);
-      const esManual = params.get("modo") === "manual";
-
-      const reportId = document.getElementById('reportId');
-      const chatIdField = document.getElementById('chatId');
-
-      reportId.value = generarIdUnico();
-      if (!esManual) reportId.setAttribute("readonly", true);
-
-      const detectedChatId = tg?.initDataUnsafe?.user?.id;
-      if (detectedChatId) chatIdField.value = detectedChatId;
-
-      if (!esManual) chatIdField.setAttribute("readonly", true);
+      document.getElementById('reportId').value = generarIdUnico();
     });
 
-    async function compressImage(file, maxWidth = 1200, quality = 0.7) { return file; }
-    async function compressVideo(file) { return file; }
+    async function subirArchivo(file, folder) {
+      const filename = `${folder}/${Date.now()}_${file.name}`;
+      const { data, error } = await supabase.storage.from('evidencias').upload(filename, file);
+      if (error) throw error;
+      const { data: publicUrl } = supabase.storage.from('evidencias').getPublicUrl(filename);
+      return publicUrl.publicUrl;
+    }
 
     async function enviarReporte(e) {
       e.preventDefault();
       const form = document.getElementById('form');
-      const fd = new FormData();
+      const id = document.getElementById('reportId').value;
+      const chatId = tg?.initDataUnsafe?.user?.id || null;
+      const evidenciaFiles = Array.from(form.elements['evidencia'].files);
+      if (evidenciaFiles.length > 6) return alert('Máximo 6 archivos.');
 
-      ['reportId','tienda','tipoProblema','prioridad','descripcion','tecnicoAsignado','chat_id'].forEach(name => {
-        const el = form.elements[name];
-        if (el) fd.append(name, el.value);
+      const evidenciaUrls = [];
+      for (const file of evidenciaFiles) {
+        const url = await subirArchivo(file, `reportes/${form.tienda.value}/${id}`);
+        evidenciaUrls.push(url);
+      }
+
+      const { error } = await supabase.from('reportes').insert({
+        id,
+        chat_id: chatId,
+        tienda: form.tienda.value,
+        tipo_problema: form.tipoProblema.value,
+        prioridad: form.prioridad.value,
+        descripcion: form.descripcion.value,
+        tecnico_asignado: form.tecnicoAsignado.value,
+        fecha: new Date().toLocaleString('es-MX'),
+        evidencia: evidenciaUrls
       });
 
-      fd.append('fecha', new Date().toLocaleString('es-MX'));
-
-      const files = Array.from(form.elements['evidencia'].files);
-      if (files.length > 6) {
-        alert('Máximo 6 archivos.');
-        return;
-      }
-      for (const f of files) {
-        const blob = f.type.startsWith('image/') ? await compressImage(f) : await compressVideo(f);
-        fd.append('evidencia', blob, f.name);
+      if (error) {
+        console.error(error);
+        return alert('❌ Error al enviar el reporte.');
       }
 
-      try {
-        const res = await fetch('https://hook.us2.make.com/b9wxlogn7fh82vk1lr9zev0emq5wtegz', {
-          method: 'POST',
-          body: fd
-        });
-        if (!res.ok) throw await res.text();
-        alert('✅ Reporte enviado con éxito');
-        form.reset();
-      } catch (err) {
-        console.error(err);
-        alert('❌ Error al enviar: ' + err);
-      }
+      alert('✅ Reporte enviado con éxito');
+      form.reset();
     }
   </script>
 </body>
 </html>
+
 
 
 
