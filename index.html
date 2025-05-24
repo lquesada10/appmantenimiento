@@ -11,7 +11,7 @@
     :root {
       --bg: #faf8f2;
       --card-bg: #fff8e1;
-      --text: #333333;
+      --text: #333;
       --label: #6F4E37;
       --border: #e0e0e0;
       --accent: #6F4E37;
@@ -22,17 +22,16 @@
       --font-heading: 'Playfair Display', serif;
     }
     * { box-sizing: border-box; }
-    html, body {
+    body {
       margin: 0; padding: 0;
       background: var(--bg);
-      width: 100%; height: 100%;
       font-family: var(--font-body);
     }
     .container {
       background: var(--card-bg);
       max-width: 480px;
       margin: 1rem auto;
-      padding: calc(var(--spacing) * 1.5);
+      padding: 2rem;
       border-radius: var(--radius);
       box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
@@ -40,188 +39,149 @@
       display: block;
       margin: 0 auto 1rem;
       width: 300px;
-      height: auto;
     }
     h2 {
-      margin: 0 0 1rem;
-      font-family: var(--font-heading);
-      font-size: 2.5rem;
-      color: var(--label);
       text-align: center;
-      line-height: 1.2;
-    }
-    .form-group { margin-top: var(--spacing); }
-    label {
-      display: block;
-      font-size: 0.9rem;
       color: var(--label);
-      margin-bottom: 0.25rem;
-      font-weight: 500;
+      font-family: var(--font-heading);
     }
-    input,
-    select,
-    textarea,
-    input[type="file"] {
-      width: 100%;
-      padding: 0.75rem;
-      border: 1px solid var(--border);
+    label {
+      font-weight: 600;
+      display: block;
+      margin-top: 1rem;
+      color: var(--label);
+    }
+    input, select, textarea {
+      width: 100%; padding: 0.75rem;
       border-radius: var(--radius);
-      background: #ffffff;
-      color: var(--text);
+      border: 1px solid var(--border);
       font-family: var(--font-body);
-      transition: border-color 0.2s;
     }
-    input:read-only {
-      background-color: #eee;
-    }
+    input[readonly] { background-color: #eee; }
     button {
       width: 100%;
+      margin-top: 1.5rem;
       padding: 1rem;
-      margin-top: var(--spacing);
-      font-family: var(--font-heading);
-      font-weight: 700;
-      color: #fff;
       background: var(--accent);
+      color: white;
       border: none;
+      font-weight: bold;
+      font-family: var(--font-heading);
+      font-size: 1rem;
       border-radius: var(--radius);
       cursor: pointer;
-      transition: background 0.2s;
-      font-size: 1rem;
     }
-    button:hover {
-      background: var(--accent-hover);
-    }
+    button:hover { background: var(--accent-hover); }
   </style>
 </head>
 <body>
   <div class="container">
-    <img src="logo LM mantenimientocafe.png" alt="Logo LM Mantenimiento" class="logo" />
+    <img src="logo LM mantenimientocafe.png" class="logo" />
     <h2>🚨 Reporte de Mantenimiento</h2>
     <form id="form">
-      <div class="form-group">
-        <label for="reportId">ID del Reporte</label>
-        <input id="reportId" name="reportId" type="text" />
-      </div>
-      <div class="form-group">
-        <label for="chat_id">Chat ID</label>
-        <input id="chat_id" name="chat_id" type="text" />
-      </div>
-      <div class="form-group">
-        <label for="tienda">Tienda</label>
-        <select id="tienda" name="tienda" required>
-          <option value="">Seleccione una tienda</option>
-          <option>Tienda 1</option>
-          <option>Tienda 2</option>
-          <option>Tienda 3</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="tipo">Tipo de problema</label>
-        <input id="tipo" name="tipoProblema" type="text" required />
-      </div>
-      <div class="form-group">
-        <label for="prioridad">Prioridad</label>
-        <select id="prioridad" name="prioridad" required>
-          <option value="">Seleccione prioridad</option>
-          <option>Alta</option>
-          <option>Media</option>
-          <option>Baja</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="descripcion">Descripción</label>
-        <textarea id="descripcion" name="descripcion" required></textarea>
-      </div>
-      <div class="form-group">
-        <label for="evidencia">Evidencia máx 6 archivos</label>
-        <input id="evidencia" name="evidencia" type="file" multiple accept="image/*,video/*"/>
-      </div>
-      <div class="form-group">
-        <label for="tecnico">Técnico asignado</label>
-        <select id="tecnico" name="tecnicoAsignado" required>
-          <option value="">Seleccione técnico</option>
-          <option>Baron</option>
-          <option>Cecilio</option>
-        </select>
-      </div>
+      <label for="reportId">ID del Reporte</label>
+      <input type="text" id="reportId" readonly />
+
+      <label for="chat_id">Chat ID</label>
+      <input type="text" id="chat_id" />
+
+      <label for="tienda">Tienda</label>
+      <select id="tienda" required>
+        <option value="">Seleccione una tienda</option>
+        <option>Tienda 1</option>
+        <option>Tienda 2</option>
+      </select>
+
+      <label for="tipo">Tipo de problema</label>
+      <input type="text" id="tipo" required />
+
+      <label for="prioridad">Prioridad</label>
+      <select id="prioridad" required>
+        <option value="">Seleccione prioridad</option>
+        <option>Alta</option>
+        <option>Media</option>
+        <option>Baja</option>
+      </select>
+
+      <label for="descripcion">Descripción</label>
+      <textarea id="descripcion" required></textarea>
+
+      <label for="evidencia">Evidencia (máx. 6 archivos)</label>
+      <input type="file" id="evidencia" multiple accept="image/*,video/*" />
+
+      <label for="tecnico">Técnico asignado</label>
+      <select id="tecnico" required>
+        <option value="">Seleccione técnico</option>
+        <option>Baron</option>
+        <option>Cecilio</option>
+      </select>
+
       <button type="submit">Enviar Reporte</button>
     </form>
   </div>
 
   <script>
-    const tg = window.Telegram?.WebApp;
-    const { createClient } = supabase;
-    const supabaseClient = createClient(
+    const tg = window.Telegram.WebApp;
+    const supabase = window.supabase.createClient(
       'https://gaiqdzjctyscufkljxvm.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInN1YiI6ImRhdGFiYXNlX2Fub24iLCJpYXQiOjE2ODc2MDYwODIsImV4cCI6MjAwMzU2MjA4Mn0.JFbRZekUAcqTwkLOaLgBlIXjjZrjMfuG-vV7Lz_5D60'
     );
 
-    tg?.onEvent('themeChanged', () => {});
-    tg?.ready();
-
-    function generarIdUnico() {
-      return crypto.randomUUID();
-    }
+    tg.ready();
 
     document.addEventListener('DOMContentLoaded', () => {
-      const chatId = tg?.initDataUnsafe?.user?.id;
-      const modoManual = new URLSearchParams(window.location.search).get('modo') === 'manual';
-
-      const reportInput = document.getElementById('reportId');
-      const chatInput = document.getElementById('chat_id');
-
-      reportInput.value = generarIdUnico();
-      reportInput.readOnly = !modoManual;
-
-      if (chatId) chatInput.value = chatId;
-      chatInput.readOnly = !modoManual;
+      const chatId = tg?.initDataUnsafe?.user?.id || '';
+      const modoManual = new URLSearchParams(location.search).get('modo') === 'manual';
+      document.getElementById('reportId').value = crypto.randomUUID();
+      document.getElementById('chat_id').value = chatId;
+      document.getElementById('chat_id').readOnly = !modoManual;
+      document.getElementById('reportId').readOnly = !modoManual;
     });
 
-    async function subirArchivo(file, folder) {
-      const filename = `${folder}/${Date.now()}_${file.name}`;
-      const { error } = await supabaseClient.storage.from('evidencias').upload(filename, file);
+    async function subirArchivo(file, path) {
+      const nombre = `${path}/${Date.now()}_${file.name}`;
+      const { error } = await supabase.storage.from('evidencias').upload(nombre, file);
       if (error) throw error;
-      const { data } = supabaseClient.storage.from('evidencias').getPublicUrl(filename);
+      const { data } = supabase.storage.from('evidencias').getPublicUrl(nombre);
       return data.publicUrl;
     }
 
-    document.getElementById('form').addEventListener('submit', async function (e) {
+    document.getElementById('form').addEventListener('submit', async e => {
       e.preventDefault();
-
       const form = e.target;
       const id = document.getElementById('reportId').value;
-      const chatId = document.getElementById('chat_id').value;
-      const evidenciaFiles = Array.from(document.getElementById('evidencia').files);
+      const chat_id = document.getElementById('chat_id').value;
+      const evidenciaInput = document.getElementById('evidencia');
+      const files = Array.from(evidenciaInput.files);
+      if (files.length > 6) return alert('Máximo 6 archivos');
 
-      if (evidenciaFiles.length > 6) return alert('Máximo 6 archivos.');
+      try {
+        const urls = [];
+        for (const f of files) {
+          const url = await subirArchivo(f, `reportes/${id}`);
+          urls.push(url);
+        }
 
-      const evidenciaUrls = [];
-      for (const file of evidenciaFiles) {
-        const url = await subirArchivo(file, `reportes/${id}`);
-        evidenciaUrls.push(url);
+        const { error } = await supabase.from('reportes').insert({
+          id,
+          chat_id,
+          tienda: form.tienda.value,
+          tipo_problema: form.tipo.value,
+          prioridad: form.prioridad.value,
+          descripcion: form.descripcion.value,
+          tecnico: form.tecnico.value,
+          fecha_reporte: new Date().toISOString(),
+          evidencias: urls
+        });
+
+        if (error) throw error;
+        alert('✅ Reporte enviado con éxito');
+        form.reset();
+      } catch (err) {
+        console.error('Error:', err);
+        alert('❌ Error al enviar el reporte.');
       }
-
-      const { error } = await supabaseClient.from('reportes').insert({
-        id,
-        chat_id: chatId,
-        tienda: form.tienda.value,
-        tipo_problema: form.tipoProblema.value,
-        prioridad: form.prioridad.value,
-        descripcion: form.descripcion.value,
-        tecnico_asignado: form.tecnicoAsignado.value,
-        fecha: new Date().toLocaleString('es-MX'),
-        evidencia: evidenciaUrls
-      });
-
-      if (error) {
-        console.error(error);
-        return alert('❌ Error al enviar el reporte.');
-      }
-
-      alert('✅ Reporte enviado con éxito');
-      form.reset();
     });
   </script>
 </body>
 </html>
-
