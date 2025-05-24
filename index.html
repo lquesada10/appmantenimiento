@@ -139,13 +139,14 @@
     });
 
     async function subirArchivo(file, path) {
-  const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-  const nombre = `${path}/${Date.now()}_${safeName}`;
-  const { error } = await supabase.storage.from('evidencias').upload(nombre, file);
+  const extension = file.name.split('.').pop();
+  const nombreSeguro = `${path}/${Date.now()}.${extension}`;
+  const { error } = await supabase.storage.from('evidencias').upload(nombreSeguro, file);
   if (error) throw error;
-  const { data } = supabase.storage.from('evidencias').getPublicUrl(nombre);
+  const { data } = supabase.storage.from('evidencias').getPublicUrl(nombreSeguro);
   return data.publicUrl;
 }
+
 
 
     document.getElementById('form').addEventListener('submit', async e => {
