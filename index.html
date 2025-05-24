@@ -71,6 +71,9 @@
       font-family: var(--font-body);
       transition: border-color 0.2s;
     }
+    input:read-only {
+      background-color: #eee;
+    }
     button {
       width: 100%;
       padding: 1rem;
@@ -90,7 +93,6 @@
     }
   </style>
 </head>
-
 <body>
   <div class="container">
     <img src="logo LM mantenimientocafe.png" alt="Logo LM Mantenimiento" class="logo" />
@@ -98,7 +100,7 @@
     <form id="form" onsubmit="enviarReporte(event)">
       <div class="form-group">
         <label for="reportId">ID del Reporte</label>
-        <input id="reportId" name="reportId" type="text" readonly />
+        <input id="reportId" name="reportId" type="text" />
       </div>
       <div class="form-group">
         <label for="chat_id">Chat ID</label>
@@ -149,8 +151,8 @@
   <script>
     const tg = window.Telegram?.WebApp;
     const supabase = window.supabase.createClient(
-      'https://XXXX.supabase.co', // <-- reemplaza con tu URL real
-      'eyXXXX'                    // <-- reemplaza con tu ANON KEY real
+      'https://XXXX.supabase.co',
+      'eyXXXX'
     );
 
     tg?.onEvent('themeChanged', () => {});
@@ -161,9 +163,18 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('reportId').value = generarIdUnico();
+      const modoManual = new URLSearchParams(window.location.search).get('modo') === 'manual';
+      const reportIdInput = document.getElementById('reportId');
+      const chatInput = document.getElementById('chat_id');
+
+      reportIdInput.value = generarIdUnico();
+      if (!modoManual) {
+        reportIdInput.readOnly = true;
+        chatInput.readOnly = true;
+      }
+
       const chatId = tg?.initDataUnsafe?.user?.id;
-      if (chatId) document.getElementById('chat_id').value = chatId;
+      if (chatId) chatInput.value = chatId;
     });
 
     async function subirArchivo(file, folder) {
