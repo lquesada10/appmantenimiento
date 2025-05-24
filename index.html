@@ -92,8 +92,8 @@
         <option>Tienda 2</option>
       </select>
 
-      <label for="tipo">Tipo de problema</label>
-      <input type="text" id="tipo" required />
+      <label for="tipoProblema">Tipo de problema</label>
+      <input type="text" id="tipoProblema" required />
 
       <label for="prioridad">Prioridad</label>
       <select id="prioridad" required>
@@ -109,8 +109,8 @@
       <label for="evidencia">Evidencia (máx. 6 archivos)</label>
       <input type="file" id="evidencia" multiple accept="image/*,video/*" />
 
-      <label for="tecnico">Técnico asignado</label>
-      <select id="tecnico" required>
+      <label for="tecnicoAsignado">Técnico asignado</label>
+      <select id="tecnicoAsignado" required>
         <option value="">Seleccione técnico</option>
         <option>Baron</option>
         <option>Cecilio</option>
@@ -162,17 +162,17 @@
           urls.push(url);
         }
 
-        const { error } = await supabase.from('reportes').insert({
+        const { error } = await supabase.from('reportes').insert([{  
           id,
           chat_id,
           tienda: form.tienda.value,
-          tipo_problema: form.tipo.value,
+          tipoProblema: form.tipoProblema.value,
           prioridad: form.prioridad.value,
           descripcion: form.descripcion.value,
-          tecnico: form.tecnico.value,
-          fecha_reporte: new Date().toISOString(),
-          evidencias: urls
-        });
+          tecnicoAsignado: form.tecnicoAsignado.value,
+          fecha: new Date().toLocaleString('es-MX'),
+          evidencia: urls
+        }]);
 
         if (error) throw error;
         alert('✅ Reporte enviado con éxito');
@@ -185,3 +185,4 @@
   </script>
 </body>
 </html>
+
