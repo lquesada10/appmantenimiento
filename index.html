@@ -139,18 +139,19 @@
     });
 
     async function subirArchivo(file, path) {
-  const extension = file.name.split('.').pop().toLowerCase();
-  const nombreSeguro = `${path}/${crypto.randomUUID()}.${extension}`;
-  const { error: uploadError } = await supabase.storage.from('evidencias').upload(nombreSeguro, file);
-  if (uploadError) throw uploadError;
+      const extension = file.name.split('.').pop().toLowerCase();
+      const sanitizedFileName = file.name
+        .toLowerCase()
+        .replace(/\s+/g, '-')         // espacios -> guiones
+        .replace(/[^a-z0-9.-]/g, ''); // solo letras, números, punto, guión
 
-  const { data } = supabase.storage.from('evidencias').getPublicUrl(nombreSeguro);
-  return data.publicUrl;
-}
+      const nombreSeguro = `${path}/${crypto.randomUUID()}-${sanitizedFileName}`;
+      const { error: uploadError } = await supabase.storage.from('evidencias').upload(nombreSeguro, file);
+      if (uploadError) throw uploadError;
 
-
-
-
+      const { data } = supabase.storage.from('evidencias').getPublicUrl(nombreSeguro);
+      return data.publicUrl;
+    }
 
     document.getElementById('form').addEventListener('submit', async e => {
       e.preventDefault();
@@ -176,7 +177,7 @@
           prioridad: form.prioridad.value,
           descripcion: form.descripcion.value,
           tecnicoAsignado: form.tecnicoAsignado.value,
-          fecha: new Date().toLocaleString('es-MX'),
+          fecha: new Date().toISOString(),
           evidencia: urls
         }]);
 
@@ -191,4 +192,5 @@
   </script>
 </body>
 </html>
+
 
