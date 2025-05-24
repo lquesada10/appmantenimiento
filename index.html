@@ -101,6 +101,10 @@
         <input id="reportId" name="reportId" type="text" readonly />
       </div>
       <div class="form-group">
+        <label for="chat_id">Chat ID</label>
+        <input id="chat_id" name="chat_id" type="text" />
+      </div>
+      <div class="form-group">
         <label for="tienda">Tienda</label>
         <select id="tienda" name="tienda" required>
           <option value="">Seleccione una tienda</option>
@@ -145,8 +149,8 @@
   <script>
     const tg = window.Telegram?.WebApp;
     const supabase = window.supabase.createClient(
-      'https://gaiqdzjctyscufkljxvm.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInN1YiI6ImdhaXFkenpjdHlzY3Vma2xqeHZtX3NlcnZpY2Vfcm9sZSIsImlhdCI6MTcwODYzNjg1MiwiZXhwIjoxNzM5MjEyODUyfQ.H14H5sV7YAKWzFgRkVa7OaZVli8rAVR3UoyEFnZz7yY'
+      'https://XXXX.supabase.co', // <-- reemplaza con tu URL real
+      'eyXXXX'                    // <-- reemplaza con tu ANON KEY real
     );
 
     tg?.onEvent('themeChanged', () => {});
@@ -158,6 +162,8 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('reportId').value = generarIdUnico();
+      const chatId = tg?.initDataUnsafe?.user?.id;
+      if (chatId) document.getElementById('chat_id').value = chatId;
     });
 
     async function subirArchivo(file, folder) {
@@ -172,13 +178,13 @@
       e.preventDefault();
       const form = document.getElementById('form');
       const id = document.getElementById('reportId').value;
-      const chatId = tg?.initDataUnsafe?.user?.id || null;
+      const chatId = document.getElementById('chat_id').value;
       const evidenciaFiles = Array.from(form.elements['evidencia'].files);
       if (evidenciaFiles.length > 6) return alert('Máximo 6 archivos.');
 
       const evidenciaUrls = [];
       for (const file of evidenciaFiles) {
-        const url = await subirArchivo(file, `reportes/${form.tienda.value}/${id}`);
+        const url = await subirArchivo(file, `reportes/${id}`);
         evidenciaUrls.push(url);
       }
 
@@ -205,7 +211,3 @@
   </script>
 </body>
 </html>
-
-
-
-
