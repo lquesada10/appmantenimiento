@@ -161,11 +161,11 @@
       try {
         const urls = [];
         for (const f of files) {
-          const url = await subirArchivo(f, `reportes/${id}`);
+          const url = await subirArchivo(f, `Reportes/${id}`);
           urls.push(url);
         }
 
-        const { error } = await supabase.from('reportes').insert([{  
+        const { error } = await supabase.from('Reportes').insert([{  
           id,
           chat_id,
           tienda: form.tienda.value,
