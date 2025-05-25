@@ -116,7 +116,10 @@
         <option>Cecilio</option>
       </select>
 
-      <input type="hidden" id="chat_id_tecnico" />
+      <div class="form-group" id="tecnicoChatManual" style="display: none;">
+        <label for="chat_id_tecnico">Chat ID del Técnico</label>
+        <input type="text" id="chat_id_tecnico" />
+      </div>
 
       <button type="submit">Enviar Reporte</button>
     </form>
@@ -134,20 +137,24 @@
     document.addEventListener('DOMContentLoaded', () => {
       const chatId = tg?.initDataUnsafe?.user?.id || '';
       const modoManual = new URLSearchParams(location.search).get('modo') === 'manual';
+
       document.getElementById('reportId').value = crypto.randomUUID();
       document.getElementById('chat_id').value = chatId;
       document.getElementById('chat_id').readOnly = !modoManual;
       document.getElementById('reportId').readOnly = !modoManual;
 
+      const tecnicoChat = document.getElementById('chat_id_tecnico');
       const tecnicoSelect = document.getElementById('tecnicoAsignado');
+
+      if (modoManual) {
+        tecnicoChat.readOnly = false;
+        document.getElementById('tecnicoChatManual').style.display = 'block';
+      }
+
       tecnicoSelect.addEventListener('change', () => {
         const tecnico = tecnicoSelect.value;
-        const chatIdTecnico = tecnico === 'Baron'
-          ? '7939979525'
-          : tecnico === 'Cecilio'
-          ? '7939979525'
-          : '';
-        document.getElementById('chat_id_tecnico').value = chatIdTecnico;
+        const id = tecnico === 'Baron' ? '7939979525' : tecnico === 'Cecilio' ? '7939979525' : '';
+        if (!modoManual) tecnicoChat.value = id;
       });
     });
 
@@ -202,3 +209,4 @@
   </script>
 </body>
 </html>
+
