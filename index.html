@@ -410,6 +410,7 @@
       const id = document.getElementById('reportId').value;
       const chat_id = document.getElementById('chat_id').value;
       const chat_id_tecnico = document.getElementById('chat_id_tecnico').value;
+      const supervisor = document.getElementById('supervisor').value;
       const zona = document.getElementById('zona').value;
       const tienda = document.getElementById('tienda').value;
       const tipoProblema = document.getElementById('tipoProblema').value;
@@ -418,7 +419,7 @@
       const tecnicoAsignado = document.getElementById('tecnicoAsignado').value;
       const lat = document.getElementById('latitud').value;
       const lng = document.getElementById('longitud').value;
-
+    
       const evidenciaInput = document.getElementById('evidencia');
       const files = Array.from(evidenciaInput.files);
       if (files.length > 6) return alert('Máximo 6 archivos');
