@@ -449,22 +449,6 @@ async function comprimirImagen(file) {
   });
 } // ← aquí cierra comprimirImagen
 
-
-
-  const { error } = await supabase.storage
-    .from('evidencias')
-    .upload(fullPath, file, {
-      contentType: file.type,
-      resumable: true,
-      chunkSize: 5 * 1024 * 1024
-    });
-  if (error) throw error;
-
-  const { data } = supabase.storage.from('evidencias').getPublicUrl(fullPath);
-  return data.publicUrl;
-}
-
-
  // ——— Envío del formulario con compresión y subida paralela ———
 document.getElementById('form').addEventListener('submit', async e => {
   e.preventDefault();
