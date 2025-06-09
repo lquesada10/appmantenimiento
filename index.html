@@ -255,6 +255,11 @@
     tg.ready();
 
     document.addEventListener('DOMContentLoaded', () => {
+      const supervisorNames = {
+  '7939979525': 'Luciano',
+  '1234567890': 'Juan',
+  // …añade aquí todos los chat_id que necesites
+};
       const chatId = tg?.initDataUnsafe?.user?.id || '';
       const modoManual = new URLSearchParams(location.search).get('modo') === 'manual';
 
@@ -263,6 +268,10 @@
       document.getElementById('chat_id').value = chatId;
       document.getElementById('chat_id').readOnly = !modoManual;
       document.getElementById('reportId').readOnly = !modoManual;
+
+            // 3) Rellenar hidden supervisor con el nombre
+      document.getElementById('supervisor').value =
+        supervisorNames[String(chatId)] || 'Desconocido';
 
       // Mostrar campo de chat_id_tecnico solo en modo manual
       const tecnicoChatGroup = document.getElementById('tecnicoChatManual');
@@ -431,6 +440,7 @@
           prioridad,
           descripcion,
           tecnicoAsignado,
+          supervisor,
           fecha: new Date().toISOString(),
           lat,
           lng,
