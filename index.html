@@ -302,6 +302,15 @@
       const latInput = document.getElementById('latitud');
       const lngInput = document.getElementById('longitud');
       const supervisorInput = document.getElementById('supervisor');
+
+      // ——— Validar máximo 6 archivos al seleccionar ———
+evidenciaInput.addEventListener('change', () => {
+  if (evidenciaInput.files.length > 6) {
+    alert('Solo puedes subir hasta 6 archivos.');
+    evidenciaInput.value = ''; // limpia selección
+  }
+});
+
       
 
       // Función para habilitar/deshabilitar campos del formulario
@@ -395,77 +404,118 @@
       });
     });
 
-    // Función para subir archivo a Supabase (igual que antes)
-    async function subirArchivo(file, path) {
-      const extension = file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '');
-      const filename = `${crypto.randomUUID()}.${extension}`;
-      const fullPath = `${path}/${filename}`;
-      const { error: uploadError } = await supabase.storage.from('evidencias').upload(fullPath, file);
-      if (uploadError) throw uploadError;
-      const { data } = supabase.storage.from('evidencias').getPublicUrl(fullPath);
-      return data.publicUrl;
-    }
+    // ——— Subir resumible por chunk (5MB) ———
+async function subirArchivo(file, path) {
+  const ext      = file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'');
+  const filename = `${crypto.randomUUID()}.${ext}`;
+  const fullPath = `${path}/${filename}`;
 
-    // Envío del formulario
-    document.getElementById('form').addEventListener('submit', async e => {
-      e.preventDefault();
-      const id = document.getElementById('reportId').value;
-      const chat_id = document.getElementById('chat_id').value;
-      const chat_id_tecnico = document.getElementById('chat_id_tecnico').value;
-      const supervisor = document.getElementById('supervisor').value;
-      const zona = document.getElementById('zona').value;
-      const tienda = document.getElementById('tienda').value;
-      const tipoProblema = document.getElementById('tipoProblema').value;
-      const prioridad = document.getElementById('prioridad').value;
-      const descripcion = document.getElementById('descripcion').value;
-      const tecnicoAsignado = document.getElementById('tecnicoAsignado').value;
-      const lat = document.getElementById('latitud').value;
-      const lng = document.getElementById('longitud').value;
-    
-      const evidenciaInput = document.getElementById('evidencia');
-      const files = Array.from(evidenciaInput.files);
-      if (files.length > 6) return alert('Máximo 6 archivos');
-
-      try {
-        const urls = [];
-        for (const f of files) {
-          const url = await subirArchivo(f, `Reportes/${id}`);
-          urls.push(url);
-        }
-
-        // Insertar en Supabase, incluyendo zona, tienda, lat y lng
-        const { error } = await supabase.from('Reportes').insert([{
-          id,
-          chat_id,
-          chat_id_tecnico,
-          zona,
-          tienda,
-          tipoProblema,
-          prioridad,
-          descripcion,
-          tecnicoAsignado,
-          supervisor,
-          fecha: new Date().toISOString(),
-          lat,
-          lng,
-          evidencia: urls
-        }]);
-
-        if (error) throw error;
-        alert('✅ Reporte enviado con éxito');
-        const form = document.getElementById('form');
-        form.reset();
-
-        // Limpiar campos ocultos y de técnicos
-        document.getElementById('latitud').value = '';
-        document.getElementById('longitud').value = '';
-        document.getElementById('tecnicoAsignado').innerHTML = '<option value="">Seleccione técnico</option>';
-        document.getElementById('chat_id_tecnico').value = '';
-      } catch (err) {
-        console.error('Error:', err);
-        alert('❌ Error al enviar el reporte.');
+  // ——— Comprimir imágenes a max 1024px y 70% de calidad ———
+async function comprimirImagen(file) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      let { width, height } = img;
+      const maxDim = 1024;
+      if (width > height && width > maxDim) {
+        height = height * maxDim / width; width  = maxDim;
+      } else if (height > maxDim) {
+        width  = width  * maxDim / height; height = maxDim;
       }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(blob => {
+        resolve(new File([blob], file.name, { type: file.type }));
+      }, file.type, 0.7);
+    };
+  });
+}
+
+
+  const { error } = await supabase.storage
+    .from('evidencias')
+    .upload(fullPath, file, {
+      contentType: file.type,
+      resumable: true,
+      chunkSize: 5 * 1024 * 1024
     });
+  if (error) throw error;
+
+  const { data } = supabase.storage.from('evidencias').getPublicUrl(fullPath);
+  return data.publicUrl;
+}
+
+
+ // ——— Envío del formulario con compresión y subida paralela ———
+document.getElementById('form').addEventListener('submit', async e => {
+  e.preventDefault();
+
+  // 1. Recoger todos los valores
+  const id               = document.getElementById('reportId').value;
+  const chat_id          = document.getElementById('chat_id').value;
+  const chat_id_tecnico  = document.getElementById('chat_id_tecnico').value;
+  const supervisor       = document.getElementById('supervisor').value;
+  const zona             = document.getElementById('zona').value;
+  const tienda           = document.getElementById('tienda').value;
+  const tipoProblema     = document.getElementById('tipoProblema').value;
+  const prioridad        = document.getElementById('prioridad').value;
+  const descripcion      = document.getElementById('descripcion').value;
+  const tecnicoAsignado  = document.getElementById('tecnicoAsignado').value;
+  const lat              = document.getElementById('latitud').value;
+  const lng              = document.getElementById('longitud').value;
+
+  // 2. Validar y leer archivos
+  const files = Array.from(document.getElementById('evidencia').files);
+  if (files.length > 6) {
+    return alert('Máximo 6 archivos');
+  }
+
+  // 3. (Opcional) Comprimir imágenes
+  const procesados = await Promise.all(
+    files.map(f =>
+      f.type.startsWith('image/')
+        ? comprimirImagen(f)
+        : Promise.resolve(f)
+    )
+  );
+
+  try {
+    // 4. Subir **en paralelo** TODOS los archivos
+    const urls = await Promise.all(
+      procesados.map(f => subirArchivo(f, `Reportes/${id}`))
+    );
+
+    // 5. Insertar en Supabase ya con `evidencia: urls`
+    const { error } = await supabase
+      .from('Reportes')
+      .insert([{
+        id,
+        chat_id,
+        chat_id_tecnico,
+        zona,
+        tienda,
+        tipoProblema,
+        prioridad,
+        descripcion,
+        tecnicoAsignado,
+        supervisor,
+        fecha: new Date().toISOString(),
+        lat,
+        lng,
+        evidencia: urls
+      }]);
+
+    if (error) throw error;
+
+    alert('✅ Reporte enviado con éxito');
+    document.getElementById('form').reset();
+  } catch (err) {
+    console.error(err);
+    alert('❌ Error al enviar el reporte.');
+  }
+});
   </script>
 </body>
 </html>
